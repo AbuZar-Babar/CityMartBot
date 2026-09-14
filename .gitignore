@@ -51,13 +51,14 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Screenshots, Recordings & HTML dumps
+debug/*.html
 *.png
 *.jpg
 *.jpeg
 *.mov
 *.mp4
 *.avi
-*.html
+!src/dashboard/public/**/*.html
 
 # =============================================================================
 # Operating System Artifacts

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityMart Bot — Automation Control Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons Script -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- TOP TELEMETRY BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">
+        <div class="brand-icon">
+          <i data-lucide="bot"></i>
+        </div>
+        <div class="brand-title">
+          <h1>CityMart Bot <span class="version-tag">PRO v1.0</span></h1>
+          <span class="brand-sub">Enterprise Invoice Extraction Automation</span>
+        </div>
+      </div>
+      <div class="status-badge" id="cdpStatusBadge">
+        <span class="status-dot"></span>
+        <span class="status-text" id="cdpStatusText">PORT 9222 CONNECTED</span>
+      </div>
+    </div>
+
+    <div class="topbar-center">
+      <div class="session-pill">
+        <span class="pill-icon"><i data-lucide="user"></i></span>
+        <span class="pill-label">Session:</span>
+        <strong id="sessionUser">Authenticated User</strong>
+        <span class="pill-sep">•</span>
+        <span class="pill-label">Entity:</span>
+        <strong id="activeEntityLabel" class="highlight-cyan">[Ready]</strong>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button class="btn btn-secondary btn-sm" id="btnOpenFolder" title="Open output folder in File Explorer">
+        <i data-lucide="folder"></i>
+        <span>Open Invoices Folder</span>
+      </button>
+      <button class="btn btn-ghost btn-sm" id="btnClearHistory" title="Reset downloaded history so bot re-checks all">
+        <i data-lucide="rotate-ccw"></i>
+        <span>Reset History</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN COCKPIT CONTAINER -->
+  <main class="cockpit-container">
+    
+    <!-- HERO CONTROL DECK -->
+    <section class="card control-deck">
+      <div class="control-deck-header">
+        <div class="active-task-wrapper">
+          <div class="pulse-indicator" id="pulseIndicator"></div>
+          <div>
+            <span class="control-label">CURRENT OPERATION</span>
+            <h2 class="active-operation-text" id="activeOpText">Bot is Idle. Press Start to begin queue.</h2>
+          </div>
+        </div>
+
+        <div class="deck-actions">
+          <!-- Playback controls -->
+          <button class="btn btn-primary btn-lg" id="btnStart">
+            <span class="btn-icon" id="btnStartIcon"><i data-lucide="play"></i></span>
+            <span id="btnStartText">Start Automation</span>
+          </button>
+          <button class="btn btn-warning btn-lg" id="btnPause" disabled>
+            <span class="btn-icon" id="btnPauseIcon"><i data-lucide="pause"></i></span>
+            <span id="btnPauseText">Pause</span>
+          </button>
+          <button class="btn btn-info btn-lg" id="btnStep" disabled title="Advance 1 step while paused">
+            <span class="btn-icon"><i data-lucide="step-forward"></i></span>
+            <span>Step</span>
+          </button>
+          <button class="btn btn-danger btn-lg" id="btnStop" disabled>
+            <span class="btn-icon"><i data-lucide="square"></i></span>
+            <span>Stop</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="control-deck-footer">
+        <!-- Speed Slider -->
+        <div class="slider-group">
+          <div class="slider-header">
+            <span class="control-label">INTERACTION SPEED & DELAY</span>
+            <span class="slider-value" id="delayValueText">250ms (Human Stealth)</span>
+          </div>
+          <div class="slider-controls">
+            <input type="range" id="delaySlider" min="50" max="1000" step="25" value="250">
+            <div class="speed-presets">
+              <button class="btn-preset" data-ms="80">Turbo (80ms)</button>
+              <button class="btn-preset active" data-ms="250">Stealth (250ms)</button>
+              <button class="btn-preset" data-ms="500">Safe (500ms)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Overview -->
+        <div class="progress-group">
+          <div class="progress-header">
+            <span class="control-label">OVERALL DOWNLOAD QUEUE</span>
+            <span class="progress-metric" id="progressMetricText">0 / 0 Invoices (0%)</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+          </div>
+          <div class="progress-sub">
+            <span id="currentCompanyProgress">Current Company: Idle</span>
+            <span id="queueTimeElapsed">Time: 00:00:00</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5-STAGE VISUAL EXECUTION STEPPER -->
+    <section class="card stepper-card">
+      <div class="stepper-grid">
+        <div class="step-node" id="stepNode1" data-step="1">
+          <div class="step-num">1</div>
+          <div class="step-info">
+            <h4>Chrome Daemon</h4>
+            <p>CDP Port 9222</p>
+          </div>
+        </div>
+        <div class="step-line" id="stepLine1"></div>
+
+        <div class="step-node" id="stepNode2" data-step="2">
+          <div class="step-num">2</div>
+          <div class="step-info">
+            <h4>Entity Switcher</h4>
+            <p>#portalEntity Modal</p>
+          </div>
+        </div>
+        <div class="step-line" id="stepLine2"></div>
+
+        <div class="step-node" id="stepNode3" data-step="3">
+          <div class="step-num">3</div>
+          <div class="step-info">
+            <h4>Grid Scanner</h4>
+            <p>ExtJS Rows</p>
+          </div>
+        </div>
+        <div class="step-line" id="stepLine3"></div>
+
+        <div class="step-node" id="stepNode4" data-step="4">
+          <div class="step-num">4</div>
+          <div class="step-info">
+            <h4>Type Filter</h4>
+            <p>Invoice Verification</p>
+          </div>
+        </div>
+        <div class="step-line" id="stepLine4"></div>
+
+        <div class="step-node" id="stepNode5" data-step="5">
+          <div class="step-num">5</div>
+          <div class="step-info">
+            <h4>PDF Export</h4>
+            <p>DevExpress XtraReports</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TWO-COLUMN WORKSPACE -->
+    <div class="workspace-grid">
+      
+      <!-- LEFT COLUMN: Extracted Invoices Table & Console -->
+      <div class="workspace-main">
+        
+        <!-- Extracted Invoices Table -->
+        <section class="card table-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="section-heading-icon"><i data-lucide="file-text"></i></div>
+              <h3>Extracted Invoices Stream</h3>
+              <span class="badge badge-emerald" id="invoiceCountBadge">0 Downloaded</span>
+            </div>
+            <div class="table-controls">
+              <input type="text" id="invoiceSearch" class="search-input" placeholder="Search by Invoice #, Date, Company...">
+              <button class="btn btn-ghost btn-sm" id="btnRefreshInvoices">
+                <i data-lucide="refresh-cw"></i>
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Company Entity</th>
+                  <th>Due Date</th>
+                  <th>Size</th>
+                  <th>Extracted At</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="invoicesTableBody">
+                <tr class="empty-row">
+                  <td colspan="6">No invoices extracted yet. Start automation or check CityMart-Invoices folder.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Live Terminal Log Feed -->
+        <section class="card log-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="section-heading-icon"><i data-lucide="terminal"></i></div>
+              <h3>Live Execution Terminal</h3>
+              <span class="live-tag">LIVE FEED</span>
+            </div>
+            <div class="log-actions">
+              <button class="btn-filter active" data-filter="all">All</button>
+              <button class="btn-filter" data-filter="success">Success</button>
+              <button class="btn-filter" data-filter="warn">Warnings</button>
+              <button class="btn-filter" data-filter="error">Errors</button>
+              <button class="btn btn-ghost btn-xs" id="btnClearLogs">Clear</button>
+            </div>
+          </div>
+          <div class="terminal-container" id="terminalOutput">
+            <div class="log-line log-info"><span class="log-time">[Init]</span> Dashboard initialized and ready.</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT COLUMN: Company Queue & Metrics -->
+      <aside class="workspace-sidebar">
+        
+        <!-- Target Entities Checklist -->
+        <section class="card sidebar-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="section-heading-icon"><i data-lucide="building-2"></i></div>
+              <h3>Target Entities Queue</h3>
+            </div>
+            <div class="queue-header-actions">
+              <button class="btn-link" id="btnSelectAll">All</button>
+              <button class="btn-link" id="btnSelectNone">None</button>
+            </div>
+          </div>
+          <p class="sidebar-sub">Select companies to include in the automated run:</p>
+          <div class="companies-queue-list" id="companiesQueueList">
+            <!-- Dynamic Company List items -->
+            <div class="loading-spinner">Loading entities...</div>
+          </div>
+        </section>
+
+        <!-- Key Metrics Panel -->
+        <section class="card sidebar-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="section-heading-icon"><i data-lucide="activity"></i></div>
+              <h3>Run Telemetry</h3>
+            </div>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <span class="metric-num highlight-emerald" id="metricTotalInvoices">0</span>
+              <span class="metric-label">Invoices Saved</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-num highlight-cyan" id="metricStorage">0 KB</span>
+              <span class="metric-label">Disk Storage</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-num highlight-amber" id="metricSpeed">~1.8s</span>
+              <span class="metric-label">Avg Extraction</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-num highlight-emerald" id="metricDuplicates">100%</span>
+              <span class="metric-label">Zero Duplicates</span>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+  </main>
+
+  <!-- PDF IN-BROWSER PREVIEW MODAL -->
+  <div class="modal-overlay" id="pdfModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="card-title-group">
+          <div class="section-heading-icon"><i data-lucide="file"></i></div>
+          <h3 id="modalTitle">Invoice Preview</h3>
+        </div>
+        <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="pdfFrame" src="about:blank"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
