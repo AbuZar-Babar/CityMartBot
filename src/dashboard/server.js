@@ -231,20 +231,24 @@ app.post('/api/bot/speed', (req, res) => {
 const DEFAULT_PORT = parseInt(process.env.PORT || '3000', 10);
 
 function startServer(port) {
-  server.listen(port, () => {
-    console.log(`\n=============================================================`);
-    console.log(`⚡ CityMart Bot Automation Dashboard Live at:`);
-    console.log(`👉 http://localhost:${port}`);
-    console.log(`=============================================================\n`);
-  });
-
-  server.on('error', (err) => {
+  const onError = (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.warn(`Port ${port} in use, attempting port ${port + 1}...`);
+      console.warn(`[WARN] Port ${port} is in use, attempting fallback to port ${port + 1}...`);
+      server.removeListener('error', onError);
       startServer(port + 1);
     } else {
       console.error('Server error:', err);
     }
+  };
+
+  server.once('error', onError);
+
+  server.listen(port, () => {
+    server.removeListener('error', onError);
+    console.log(`\n=============================================================`);
+    console.log(`⚡ CityMart Bot Automation Dashboard Live at:`);
+    console.log(`👉 http://localhost:${port}`);
+    console.log(`=============================================================\n`);
   });
 }
 
