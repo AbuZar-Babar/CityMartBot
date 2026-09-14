@@ -100,68 +100,94 @@ async function readInvoiceRowsFromGrid(page) {
   }
 
   const rows = await page.evaluate(() => {
+    // 1. Detect column indices from headers if present
+    const headers = [...document.querySelectorAll('.x-column-header, th')];
+    let typeColIdx = -1;
+    let invNumColIdx = -1;
+    let invDateColIdx = -1;
+    let dueDateColIdx = -1;
+
+    headers.forEach((h, idx) => {
+      const headerText = (h.innerText || h.textContent || '').trim().toLowerCase();
+      if (/^type\b|transaction\s*type/i.test(headerText)) typeColIdx = idx;
+      if (/invoice\s*#|invoice\s*no|reference\s*#/i.test(headerText)) invNumColIdx = idx;
+      if (/invoice\s*date|trans\s*date|^date\b/i.test(headerText)) invDateColIdx = idx;
+      if (/due\s*date/i.test(headerText)) dueDateColIdx = idx;
+    });
+
     const rowEls = [...document.querySelectorAll('.x-grid-row, [role="row"]')];
     return rowEls
       .map((row) => {
         const cells = [...row.querySelectorAll('.x-grid-cell, td')];
+        const cellTexts = cells.map((c) => (c.innerText || c.textContent || '').trim());
+        const rowText = (row.textContent || '').trim();
 
-        // 1. Locate the exact invoice cell (typically gridcolumn-1158 or cell matching pattern)
-        const invCell = cells.find((c) => {
-          const colId = c.getAttribute('data-columnid') || '';
-          const t = (c.innerText || c.textContent || '').trim();
-          return colId.includes('1158') || /^(DR-[\d-]+|SI-\d+|\d{5,})$/.test(t) || /(DR-\d+|SI-\d+)/.test(t);
-        });
-
+        // 1. Locate Invoice Number
         let invoiceNumber = null;
-        if (invCell) {
-          const t = (invCell.innerText || invCell.textContent || '').trim();
+        if (invNumColIdx >= 0 && cellTexts[invNumColIdx]) {
+          const t = cellTexts[invNumColIdx];
           const m = t.match(/DR-[\d-]+|SI-\d+|\b\d{5,}\b/);
           invoiceNumber = m ? m[0] : t;
-        } else {
-          // Bounded regex match fallback
-          const rowText = (row.textContent || '').trim();
-          const numberMatch = rowText.match(/SI-\d+|DR-[\d-]+|\b\d{5,}\b/);
-          invoiceNumber = numberMatch ? numberMatch[0] : null;
+        }
+        if (!invoiceNumber) {
+          const invCellText = cellTexts.find((t) =>
+            /^(DR-[\d-]+|SI-\d+|\d{5,})$/.test(t) || /(DR-\d+|SI-\d+)/.test(t)
+          );
+          if (invCellText) {
+            const m = invCellText.match(/DR-[\d-]+|SI-\d+|\b\d{5,}\b/);
+            invoiceNumber = m ? m[0] : invCellText;
+          } else {
+            const numberMatch = rowText.match(/SI-\d+|DR-[\d-]+|\b\d{5,}\b/);
+            invoiceNumber = numberMatch ? numberMatch[0] : null;
+          }
         }
 
-        // 2. Locate Transaction Type cell (data-columnid="gridcolumn-1163" or column with matching classes / position)
-        const typeCell =
-          cells.find((c) => {
-            const colId = c.getAttribute('data-columnid') || '';
-            return colId.includes('1163') || c.className.includes('gridcolumn-1163');
-          }) || (invCell ? cells[cells.indexOf(invCell) + 1] : cells[2]);
-
-        const transactionType = typeCell
-          ? (typeCell.innerText || typeCell.textContent || '').trim()
-          : '';
-
-        // 3. Locate date cells (Invoice Date & Due Date)
-        const dateCells = cells.filter((c) => {
-          const colId = c.getAttribute('data-columnid') || '';
-          return (
-            colId.includes('datecolumn') ||
-            c.className.includes('datecolumn') ||
-            /\b\d{1,2}\/\d{1,2}\/\d{4}\b/.test(c.textContent || '')
+        // 2. Locate Transaction Type
+        let transactionType = '';
+        if (typeColIdx >= 0 && cellTexts[typeColIdx]) {
+          transactionType = cellTexts[typeColIdx];
+        }
+        if (!transactionType) {
+          const typeMatch = cellTexts.find((t) =>
+            /^(invoice|credit memo|debit memo|credit|debit)$/i.test(t)
           );
-        });
-        const invoiceDate = dateCells[0]
-          ? (dateCells[0].innerText || dateCells[0].textContent || '').trim()
-          : null;
-        const dueDate = dateCells[1]
-          ? (dateCells[1].innerText || dateCells[1].textContent || '').trim()
-          : null;
+          if (typeMatch) {
+            transactionType = typeMatch;
+          } else if (cellTexts[2] && /^[a-zA-Z\s]+$/.test(cellTexts[2]) && cellTexts[2].length < 25) {
+            transactionType = cellTexts[2];
+          }
+        }
 
-        const rowText = (row.textContent || '').trim();
-        const isInvoice = transactionType
-          ? transactionType.toLowerCase() === 'invoice'
-          : !rowText.toLowerCase().includes('credit memo');
+        // 3. Locate Date Cells
+        const dateValues = cellTexts.filter((t) => /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(t));
+        let invoiceDate = null;
+        let dueDate = null;
+
+        if (invDateColIdx >= 0 && cellTexts[invDateColIdx] && /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(cellTexts[invDateColIdx])) {
+          invoiceDate = cellTexts[invDateColIdx];
+        } else {
+          invoiceDate = dateValues[0] || null;
+        }
+
+        if (dueDateColIdx >= 0 && cellTexts[dueDateColIdx] && /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(cellTexts[dueDateColIdx])) {
+          dueDate = cellTexts[dueDateColIdx];
+        } else {
+          dueDate = dateValues[1] || null;
+        }
+
         const isCreditMemo =
-          transactionType.toLowerCase().includes('credit') ||
-          rowText.toLowerCase().includes('credit memo');
+          (transactionType && /credit/i.test(transactionType)) ||
+          /credit memo/i.test(rowText);
+
+        const isInvoice =
+          !isCreditMemo &&
+          (transactionType
+            ? /invoice/i.test(transactionType)
+            : /invoice/i.test(rowText) || !isCreditMemo);
 
         return {
           invoiceNumber,
-          transactionType,
+          transactionType: transactionType || (isInvoice ? 'Invoice' : 'Unknown'),
           isInvoice,
           isCreditMemo,
           invoiceDate,
@@ -173,6 +199,9 @@ async function readInvoiceRowsFromGrid(page) {
   });
 
   console.log(`[INFO] readInvoiceRowsFromGrid extracted ${rows.length} invoice rows.`);
+  if (rows.length > 0) {
+    console.log('[DEBUG] First 3 extracted rows:', JSON.stringify(rows.slice(0, 3), null, 2));
+  }
   return rows;
 }
 

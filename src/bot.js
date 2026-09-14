@@ -256,8 +256,13 @@ async function processCompanyInvoices(page, targetShortLabel, folderKey, tmpDown
   const alreadySaved = new Set(processedLog[folderKey] || []);
 
   const candidates = allRows
-    .filter((r) => r.isInvoice && !r.isCreditMemo && r.invoiceDate && !alreadySaved.has(r.invoiceNumber))
-    .sort((a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate))
+    .filter((r) => r.isInvoice && !r.isCreditMemo && !alreadySaved.has(r.invoiceNumber))
+    .sort((a, b) => {
+      if (a.invoiceDate && b.invoiceDate) {
+        return new Date(b.invoiceDate) - new Date(a.invoiceDate);
+      }
+      return 0;
+    })
     .slice(0, config.SCRAPER.latestInvoicesPerCompany);
 
   console.log(
