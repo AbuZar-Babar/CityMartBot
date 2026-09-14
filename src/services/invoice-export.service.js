@@ -16,24 +16,29 @@ async function extractDueDate(page, timeoutMs = 8000) {
   return null;
 }
 
-async function humanClickExportButton(page, timeoutMs = 12000) {
+async function humanClickExportButton(page, timeoutMs = 15000) {
   const start = Date.now();
+  console.log('    Waiting for DevExpress ReportViewer toolbar to initialize...');
+  await new Promise((r) => setTimeout(r, 1500)); // Allow DevExpress scripts to attach handlers
+
   while (Date.now() - start < timeoutMs) {
     const frames = [page.mainFrame(), ...page.frames().filter((f) => f !== page.mainFrame())];
 
     for (const frame of frames) {
       try {
         const handle = await frame.evaluateHandle(() => {
-          // 1. Direct DevExpress element IDs & classes
-          const dxDirect = document.querySelector(
-            '#InvoiceMainReport_Splitter_Toolbar_Menu_DXI9_Img, ' +
-            '#InvoiceMainReport_Splitter_Toolbar_Menu_DXI9_T, ' +
-            '#InvoiceMainReport_Splitter_Toolbar_Menu_DXI9_, ' +
-            '.dxXtraReports_BtnSave_Mulberry, ' +
-            '[id*="Toolbar_Menu_DXI9"], ' +
-            '[id*="BtnSave"]'
-          );
-          if (dxDirect && dxDirect.offsetParent !== null) return dxDirect;
+          // 1. Direct DevExpress element IDs & classes (Image, Div, or Li)
+          const img = document.querySelector('#InvoiceMainReport_Splitter_Toolbar_Menu_DXI9_Img');
+          if (img && img.offsetParent !== null) return img;
+
+          const div = document.querySelector('#InvoiceMainReport_Splitter_Toolbar_Menu_DXI9_T');
+          if (div && div.offsetParent !== null) return div;
+
+          const li = document.querySelector('#InvoiceMainReport_Splitter_Toolbar_Menu_DXI9_');
+          if (li && li.offsetParent !== null) return li;
+
+          const btnSave = document.querySelector('.dxXtraReports_BtnSave_Mulberry, [id*="BtnSave"]');
+          if (btnSave && btnSave.offsetParent !== null) return btnSave;
 
           // 2. By exact or partial title/alt attribute
           const byTitle = [...document.querySelectorAll('[title], [alt]')].find((el) => {
@@ -63,40 +68,76 @@ async function humanClickExportButton(page, timeoutMs = 12000) {
           });
           if (byAria) return byAria;
 
-          // 5. By inner text (Export, Export to PDF)
-          const byText = [...document.querySelectorAll('button, a, span, div.x-btn, li.dxm-item')].find((el) => {
-            if (el.offsetParent === null) return false;
-            const text = (el.innerText || el.textContent || '').trim();
-            return text === 'Export' || text === 'Export to PDF' || text.startsWith('Export');
-          });
-          if (byText) return byText;
-
           return null;
         });
 
         const el = handle.asElement();
         if (el) {
-          const box = await el.boundingBox();
-          if (box && box.width > 0 && box.height > 0) {
-            console.log(
-              `    Found DevExpress export button at (${Math.round(box.x)}, ${Math.round(box.y)}). Clicking...`
-            );
-            await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-            // Also trigger DOM click as a backup
-            await frame.evaluate((node) => node.click(), el);
-            await handle.dispose();
-            return true;
-          }
+          console.log('    Found DevExpress export toolbar element. Triggering export...');
 
-          const clicked = await humanClickHandle(page, handle);
+          // 1. Native Puppeteer element click with delay
+          try {
+            await el.click({ delay: 60 });
+          } catch (e) {}
+
+          // 2. Coordinate click via mouse if bounding box available
+          try {
+            const box = await el.boundingBox();
+            if (box && box.width > 0 && box.height > 0) {
+              await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+            }
+          } catch (e) {}
+
+          // 3. Dispatch full DOM event lifecycle & invoke DevExpress JavaScript API
+          await frame.evaluate((targetEl) => {
+            const targets = [
+              targetEl,
+              targetEl.closest ? targetEl.closest('.dxm-item') : null,
+              targetEl.querySelector ? targetEl.querySelector('img') : null,
+              targetEl.parentElement
+            ].filter(Boolean);
+
+            for (const t of targets) {
+              ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach((evtName) => {
+                const evt = new MouseEvent(evtName, {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window,
+                  buttons: 1
+                });
+                t.dispatchEvent(evt);
+              });
+              if (typeof t.click === 'function') {
+                try { t.click(); } catch (e) {}
+              }
+            }
+
+            // Direct DevExpress client API calls
+            try {
+              if (window.InvoiceMainReport && typeof window.InvoiceMainReport.SaveToDisk === 'function') {
+                window.InvoiceMainReport.SaveToDisk('pdf');
+              } else if (window.InvoiceMainReport && typeof window.InvoiceMainReport.ExportTo === 'function') {
+                window.InvoiceMainReport.ExportTo('pdf');
+              } else if (typeof ASPxClientControl !== 'undefined') {
+                const col = ASPxClientControl.GetControlCollection();
+                const ctrl = col.GetByName('InvoiceMainReport') || col.GetByName('ReportViewer');
+                if (ctrl && typeof ctrl.SaveToDisk === 'function') {
+                  ctrl.SaveToDisk('pdf');
+                } else if (ctrl && typeof ctrl.ExportTo === 'function') {
+                  ctrl.ExportTo('pdf');
+                }
+              }
+            } catch (e) {}
+          }, el);
+
           await handle.dispose();
-          if (clicked) return true;
+          return true;
         } else {
           await handle.dispose();
         }
       } catch (err) {}
     }
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 500));
   }
   return false;
 }
