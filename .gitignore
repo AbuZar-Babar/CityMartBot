@@ -1,2 +1,92 @@
-.env
+# =============================================================================
+# Dependencies
+# =============================================================================
 node_modules/
+.pnp
+.pnp.js
+
+# =============================================================================
+# Environment & Secrets
+# =============================================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# =============================================================================
+# Browser Automation & Profile Sessions
+# =============================================================================
+chrome-profile/
+chrome_profile/
+*profile*test*
+*profile*copy*
+browser-endpoint.json
+session-check-log.txt
+SingletonLock
+SingletonSocket
+SingletonCookie
+*.pma
+
+# =============================================================================
+# Ephemeral Downloads & Scraper Staging
+# =============================================================================
+pdf-downloads-tmp/*
+!pdf-downloads-tmp/.gitkeep
+*.crdownload
+*.tmp
+*.temp
+
+# =============================================================================
+# Debugging Dumps & Media Artifacts
+# =============================================================================
+debug/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Screenshots, Recordings & HTML dumps
+*.png
+*.jpg
+*.jpeg
+*.mov
+*.mp4
+*.avi
+*.html
+
+# =============================================================================
+# Operating System Artifacts
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# =============================================================================
+# IDE & Editor Configurations
+# =============================================================================
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo

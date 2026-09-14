@@ -1,19 +1,29 @@
 {
   "name": "citymart-portal-bot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Automated Web Scraper and Invoice Extraction Bot for CityMart Portal",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/bot.js",
+    "bot": "node src/bot.js",
+    "server": "node scripts/browser-server.js",
+    "open-chrome": "open-chrome-debug.bat",
+    "login": "node scripts/auto-login.js",
+    "check-session": "node scripts/check-session.js",
+    "test": "node scripts/test-connection.js"
   },
-  "keywords": [],
+  "keywords": [
+    "scraper",
+    "puppeteer",
+    "bot",
+    "invoices"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "dotenv": "^17.4.2",
     "node-fetch": "^2.7.0",
-    "playwright": "^1.63.0",
     "puppeteer": "^25.9.0"
   }
 }
