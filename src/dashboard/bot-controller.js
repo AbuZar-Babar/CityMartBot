@@ -196,7 +196,6 @@ class BotController extends EventEmitter {
         }
         this.setStep(1, this.status, err.message);
         this.emit('state', this.getState());
-        throw err;
       } finally {
         this._activeRunPromise = null;
       }

@@ -116,9 +116,9 @@ function updateBotUI(state) {
   const status = state.status || 'IDLE';
   if (status === 'RUNNING') {
     btnStart.disabled = true;
-    btnStartText.textContent = 'Running...';
+    btnStart.innerHTML = '<span class="btn-icon"><i data-lucide="loader-2" class="spin-icon"></i></span> <span id="btnStartText">Running...</span>';
     btnPause.disabled = false;
-    btnPause.innerHTML = '<span class="btn-icon">⏸</span> Pause';
+    btnPause.innerHTML = '<span class="btn-icon"><i data-lucide="pause"></i></span> <span id="btnPauseText">Pause</span>';
     btnStep.disabled = true;
     btnStop.disabled = false;
 
@@ -130,14 +130,14 @@ function updateBotUI(state) {
   } else if (status === 'PAUSED') {
     btnStart.disabled = true;
     btnPause.disabled = false;
-    btnPause.innerHTML = '<span class="btn-icon">▶</span> Resume';
+    btnPause.innerHTML = '<span class="btn-icon"><i data-lucide="play"></i></span> <span id="btnPauseText">Resume</span>';
     btnStep.disabled = false;
     btnStop.disabled = false;
 
     pulseIndicator.className = 'pulse-indicator paused';
   } else if (status === 'STARTING') {
     btnStart.disabled = true;
-    btnStartText.textContent = 'Connecting...';
+    btnStart.innerHTML = '<span class="btn-icon"><i data-lucide="loader-2" class="spin-icon"></i></span> <span id="btnStartText">Connecting...</span>';
     btnPause.disabled = true;
     btnStep.disabled = true;
     btnStop.disabled = false;
@@ -146,15 +146,17 @@ function updateBotUI(state) {
   } else {
     // IDLE / STOPPED / ERROR
     btnStart.disabled = false;
-    btnStartText.textContent = 'Start Automation';
+    btnStart.innerHTML = '<span class="btn-icon"><i data-lucide="play"></i></span> <span id="btnStartText">Start Automation</span>';
     btnPause.disabled = true;
-    btnPause.innerHTML = '<span class="btn-icon">⏸</span> Pause';
+    btnPause.innerHTML = '<span class="btn-icon"><i data-lucide="pause"></i></span> <span id="btnPauseText">Pause</span>';
     btnStep.disabled = true;
     btnStop.disabled = true;
 
     pulseIndicator.className = status === 'ERROR' ? 'pulse-indicator error' : 'pulse-indicator';
     stopTimer();
   }
+
+  refreshLucideIcons();
 
   // Active Operation Text
   if (state.currentStep) {
@@ -385,12 +387,15 @@ function renderInvoicesTable(invoices) {
       <td><span style="color: var(--text-muted); font-size: 0.75rem;">${new Date(inv.modifiedAt).toLocaleTimeString()}</span></td>
       <td style="text-align: right;">
         <button class="btn btn-secondary btn-xs btn-view-pdf" data-url="${inv.downloadUrl}" data-title="${inv.fileName}">
-          👁 View PDF
+          <i data-lucide="eye"></i>
+          <span>View PDF</span>
         </button>
       </td>
     `;
     invoicesTableBody.appendChild(tr);
   });
+
+  refreshLucideIcons();
 
   document.querySelectorAll('.btn-view-pdf').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -399,6 +404,12 @@ function renderInvoicesTable(invoices) {
       openPdfModal(url, title);
     });
   });
+}
+
+function refreshLucideIcons() {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 function updateMetrics(invoices) {
@@ -530,6 +541,7 @@ btnClearHistory.addEventListener('click', async () => {
 // INITIALIZATION
 // =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  refreshLucideIcons();
   connectWebSocket();
   fetchCompanies();
   fetchInvoices();

@@ -98,12 +98,46 @@ body {
 }
 
 .brand-icon {
-  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid var(--primary-emerald);
   border-radius: var(--radius-md);
-  padding: 0.25rem 0.5rem;
+  padding: 0.4rem;
   box-shadow: 0 0 12px var(--primary-glow);
+  color: var(--primary-emerald);
+}
+
+.brand-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke-width: 2.2px;
+}
+
+.section-heading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyan-electric);
+}
+
+.section-heading-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke-width: 2px;
+}
+
+.pill-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--cyan-electric);
+}
+
+.pill-icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  stroke-width: 2px;
 }
 
 .brand-title h1 {
@@ -404,9 +438,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   transition: all var(--transition-fast);
   text-decoration: none;
+}
+
+.btn svg, .btn-icon svg {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 2.2px;
+  display: block;
 }
 
 .btn-lg {
@@ -414,14 +455,29 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-size: 0.92rem;
 }
 
+.btn-lg svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
 .btn-sm {
   padding: 0.35rem 0.75rem;
   font-size: 0.78rem;
 }
 
+.btn-sm svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
 .btn-xs {
   padding: 0.2rem 0.5rem;
   font-size: 0.7rem;
+}
+
+.btn-xs svg {
+  width: 0.8rem;
+  height: 0.8rem;
 }
 
 .btn-primary {
@@ -932,4 +988,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .control-deck-footer {
     grid-template-columns: 1fr;
   }
+}
+
+.spin-icon {
+  animation: icon-spin 1s linear infinite;
+}
+
+@keyframes icon-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
