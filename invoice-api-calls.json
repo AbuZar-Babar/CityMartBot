@@ -1,8 +1,0 @@
-[
-  {
-    "url": "https://citymart.i21web.com/iRelyProd/bundles/main?ver=22.1.0507.3100a",
-    "method": "GET",
-    "status": 200,
-    "bodyPreview": "/* Minification failed. Returning unminified contents.\r\n(2534,41-42): run-time error JS1195: Expected expression: )\r\n(2534,44-45): run-time error JS1195: Expected expression: >\r\n(2539,18-19): run-time error JS1195: Expected expression: ,\r\n(2540,13-14): run-time error JS1002: Syntax error: }\r\n(2543,13-14): run-time error JS1002: Syntax error: }\r\n(2546,49-50): run-time error JS1004: Expected ';': {\r\n(2557,10-11): run-time error JS1195: Expected expression: )\r\n(2559,27-28): run-time error JS1004: Expected ';': {\r\n(2578,5-6): run-time error JS1002: Syntax error: }\r\n(2583,27-28): run-time error JS1004: Expected ';': {\r\n(2688,6-7): run-time error JS1195: Expected expression: )\r\n(2694,16-17): run-time error JS1195: Expected expression: )\r\n(2694,18-19): run-time error JS1004: Expected ';': {\r\n(2814,6-7): run-time error JS1195: Expected expression: )\r\n(2820,27-28): run-time error JS1004: Expected ';': {\r\n(2922,6-7): run-time error JS1195: Expected expression: )\r\n(2928,16-17): run-time error JS1"
-  }
-]
