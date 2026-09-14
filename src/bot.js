@@ -80,11 +80,22 @@ async function runBot() {
   const tmpDownloadDir = config.PATHS.tmpDownloads;
   fs.mkdirSync(tmpDownloadDir, { recursive: true });
 
-  const client = await page.target().createCDPSession();
-  await client.send('Page.setDownloadBehavior', {
-    behavior: 'allow',
-    downloadPath: tmpDownloadDir
-  });
+  try {
+    const browserClient = await browser.target().createCDPSession();
+    await browserClient.send('Browser.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: tmpDownloadDir,
+      eventsEnabled: true
+    });
+  } catch (e) {}
+
+  try {
+    const client = await page.target().createCDPSession();
+    await client.send('Page.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: tmpDownloadDir
+    });
+  } catch (e) {}
 
   try {
     if (!page.url().includes('#home')) {
