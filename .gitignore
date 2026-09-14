@@ -29,10 +29,12 @@ SingletonCookie
 *.pma
 
 # =============================================================================
-# Ephemeral Downloads & Scraper Staging
+# Ephemeral Downloads & Scraper Output
 # =============================================================================
 pdf-downloads-tmp/*
 !pdf-downloads-tmp/.gitkeep
+CityMart-Invoices/
+output/
 *.crdownload
 *.tmp
 *.temp
