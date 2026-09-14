@@ -1,0 +1,55 @@
+[
+  {
+    "name": "i21_irelyprod.AspNet.ApplicationCookie",
+    "value": "uNqvOqtkyHx_HxBv5NJZKMdC6yjW6SqytYjGXZha0RWBpCTw4eZwZIHIdN_AiKj-U8wdar38UqmbxNDI4VlzZp4DXKqXeGjADlwqDRnVHJNXZUcC3nCeVLAOF0X-hxdkntOFQhCyL_lcnc0Ot9eH0kc27nDHuZRgGqXuEUViTeQzgvsmQvJZflAbCsIb7egp17uokPIyaImWGt_w2dSzOY0dNGtngti9JL8BCDgsv8Mce4d7go46UbI3k7QDkP5U6y5lzLTiFqBgmubEV7FtCi2CNk6YPmUW9VPWK7lp4pTgH8qJ00_-LJgfRxnHL5u8i0RGuWrlPM2SDx8b-yP2_m6yOKTUFUenQJi56_wSUmaTLF1qVb8bmUZK6fwDrbXnUX-jwsdbbTBhSytwG7gD3FZpZlJWM__O4wxfWvUhNNvtrp2G3gOPYX2LEHYBU6cKejJgzM23CjINmLEoYvOyOzSQCppUVQpKP4G-cmnA44nY_FNBmr3YBAhjZRELp8F4LsmHskwLc4BmHNO99mLPOQ",
+    "domain": "citymart.i21web.com",
+    "path": "/",
+    "expires": -1,
+    "size": 572,
+    "httpOnly": true,
+    "secure": true,
+    "session": true,
+    "priority": "Medium",
+    "sourceScheme": "Secure"
+  },
+  {
+    "name": "__RequestVerificationToken_L2lSZWx5UHJvZA2",
+    "value": "_i8BKhRIslh-2J_zu8BiowEymXyQF7K3F9RjpsVF2NRCXmcpr3R9jxl8AYPb8yszLIyngtcno722if6SEU7o7rX-tOqjN4Xl401L0Sc1mlo1",
+    "domain": "citymart.i21web.com",
+    "path": "/",
+    "expires": -1,
+    "size": 150,
+    "httpOnly": true,
+    "secure": false,
+    "session": true,
+    "priority": "Medium",
+    "sourceScheme": "Secure"
+  },
+  {
+    "name": "ASP.NET_SessionId",
+    "value": "q1kqq5crft0ijftsagvzsx1r",
+    "domain": "citymart.i21web.com",
+    "path": "/",
+    "expires": -1,
+    "size": 41,
+    "httpOnly": true,
+    "secure": false,
+    "session": true,
+    "sameSite": "Lax",
+    "priority": "Medium",
+    "sourceScheme": "Secure"
+  },
+  {
+    "name": "i21_irelyprod",
+    "value": "Rb+7bTOjiyd0k2ZxMenMkok5RXC1+sWmnZ28qnLieY2UzzNYzfigm/w97y3QkbITNtnq+bXkLzYgL59i1YfRfjVMF6ymq20iAWqFO+DkWpOBxrYxKWFhqiZP/8+GfA1bw6uywhGEfj30tVd4I1tgCpy2YAEXP5CzyBsODYambOZ2sN3EXGU/14Ll8wvDg2cbRBdNASFR6uzDjNISBWoBQwXr7kgBpdSGfw3EW8g7hsXV2neSf9WZw81SeNELWeP9fVALl6XOBKPuuNRyw/67kO0nq4b1Ay6KCA9bdGlTrRHsj+g8ZjxlQQes23aS+zOyl4Y6xObkJlrqYKFFq6qjCJ2ELKgHsTL3Cyz528NTgxQp0Y/Bt+V9E7B5qTOheUIbVxUVuuhTZiLB71ydVvmD8LC2freAJOkLic0GML0gmvBKhhFZg0rLpAAtO9wqteNuXMoPIt4C58e6HW4RKCoRz5I80TxETV7vFxkvjVI9PLWTT0v1C1IXla9ME9lO6sC//olGSdumRwU5sCg37JtFbihEhwaxrFPr0PsYEamBf0C0kCkt0fR9nCdvhbkAas4y0nY0Mf/4Thr4hJ9VkB4HZz7mvQ71eA2ubZ5PZ38vSR4vK5qqwpawZj2md8/ieoUR2tuSvRBpp4JpD3TzcnApgmHacxDcYOb5z8pF7rXejI2e2WCn174ZsheggZeS2K2xcBRr6rf8af6ufVtScNs/4fzdQf2SVb/FUAWvYr0lo6f22sD10NE5IpbTnop3W/vKdDHAcJUOoXFWgUGMPcqVAA==",
+    "domain": "citymart.i21web.com",
+    "path": "/",
+    "expires": 1823018309.669652,
+    "size": 805,
+    "httpOnly": false,
+    "secure": false,
+    "session": false,
+    "priority": "Medium",
+    "sourceScheme": "Secure"
+  }
+]
