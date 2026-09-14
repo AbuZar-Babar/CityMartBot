@@ -1,12 +1,18 @@
-/**
- * Human-like mouse and keyboard interaction helpers.
- * Emulates natural human jitter, acceleration, pauses, and keystroke delays
- * to bypass bot detection heuristics.
- */
+let globalDelayMultiplier = 1.0;
+
+function setDelayMultiplier(multiplier) {
+  globalDelayMultiplier = Math.max(0.1, Math.min(5.0, Number(multiplier) || 1.0));
+}
+
+function getDelayMultiplier() {
+  return globalDelayMultiplier;
+}
 
 function randomDelay(min = 100, max = 300) {
+  const scaledMin = Math.round(min * globalDelayMultiplier);
+  const scaledMax = Math.max(scaledMin, Math.round(max * globalDelayMultiplier));
   return new Promise((resolve) =>
-    setTimeout(resolve, Math.floor(Math.random() * (max - min + 1)) + min)
+    setTimeout(resolve, Math.floor(Math.random() * (scaledMax - scaledMin + 1)) + scaledMin)
   );
 }
 
@@ -182,6 +188,8 @@ async function humanClickTopmostByText(page, text, { exact = false, timeoutMs = 
 
 module.exports = {
   randomDelay,
+  setDelayMultiplier,
+  getDelayMultiplier,
   humanClick,
   humanClickHandle,
   humanDoubleClickHandle,

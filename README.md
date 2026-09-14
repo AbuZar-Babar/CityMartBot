@@ -61,8 +61,28 @@ CITYMART_COMPANY=Charge Up 101
 
 ## 💻 How to Run the Bot
 
-### Option 1: Standard Interactive Mode (Recommended)
-Launch the bot with full interactive control:
+### Option 1: 🖥️ Cybernetic Web Dashboard (Recommended)
+Launch the full interactive Web Dashboard UI with live telemetry, dynamic speed control, PDF previews, and multi-tenant entity management:
+
+```bash
+npm run dashboard
+# or
+npm start
+```
+Then open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+**Dashboard Capabilities:**
+- 🎮 **Playback Engine:** Start, Pause, Resume, Step-through, and Stop automation runs on demand.
+- ⚡ **Dynamic Speed Control:** Adjust interaction delay from 50ms (ultra-fast) to 1000ms (cautious) in real time without restarting the bot.
+- 🏢 **Multi-Tenant Entity Selector:** Select specific companies to process or run all with 1 click.
+- 📑 **In-Browser PDF Viewer:** Preview downloaded invoice PDFs instantly in modal viewer.
+- 📂 **Quick Folder Access:** Open `CityMart-Invoices/` directly in File Explorer.
+- 📟 **Live Terminal Console:** Real-time log streaming with severity filters (INFO, WARN, ERROR, SUCCESS).
+
+---
+
+### Option 2: ⌨️ Standard Interactive CLI
+Launch the bot in interactive terminal mode:
 
 ```bash
 npm run bot
@@ -87,7 +107,7 @@ CURRENT ACTIVE IN PORTAL: [Charge Up 101]
 Choose an option [1/2/3/4/5/a/m/q] (default: 5):
 ```
 
-### Option 2: 1-Click Batch Run
+### Option 3: 1-Click Batch Run
 - **Windows**: Double-click `run-all.bat`
 - **macOS / Linux**: Double-click or execute `./run-all.command`
 
@@ -114,7 +134,8 @@ CityMart-Invoices/
 
 | Command | Description |
 | :--- | :--- |
-| `npm run bot` / `npm start` | Runs the main invoice extraction bot |
+| `npm run dashboard` / `npm start` | Launches the Cybernetic Web Dashboard on `http://localhost:3000` |
+| `npm run bot` | Runs the invoice extraction bot in interactive CLI mode |
 | `npm run server` | Starts the persistent Chrome browser daemon on port 9222 |
 | `npm run login` | Runs the automated login flow and saves session cookies |
 | `npm run check-session` | Checks if the current portal session is still authenticated |

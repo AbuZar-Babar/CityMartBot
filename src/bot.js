@@ -322,10 +322,257 @@ async function processCompanyInvoices(page, targetShortLabel, folderKey, tmpDown
   };
 }
 
+async function runBotProgrammatic(controller, options = {}) {
+  controller.log('Initializing browser and connecting to Chrome on port 9222...', 'info');
+  controller.setStep(1, 'Connecting Daemon', 'Connecting to Chrome browser daemon (Port 9222)...');
+
+  let { browser, page } = await getLoggedInPage();
+  await controller.checkPauseOrStop();
+
+  controller.log('Verifying user authentication...', 'info');
+  await ensureLoggedIn(page);
+  await controller.checkPauseOrStop();
+
+  const tmpDownloadDir = config.PATHS.tmpDownloads;
+  fs.mkdirSync(tmpDownloadDir, { recursive: true });
+
+  try {
+    const browserClient = await browser.target().createCDPSession();
+    await browserClient.send('Browser.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: tmpDownloadDir,
+      eventsEnabled: true
+    });
+  } catch (e) {}
+
+  try {
+    const client = await page.target().createCDPSession();
+    await client.send('Page.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: tmpDownloadDir
+    });
+  } catch (e) {}
+
+  try {
+    if (!page.url().includes('#home')) {
+      await page.goto(`${config.PORTAL_URL}#home`, {
+        waitUntil: 'domcontentloaded',
+        timeout: config.SCRAPER.navigationTimeoutMs
+      });
+    }
+  } catch (navErr) {}
+  await new Promise((r) => setTimeout(r, 1000));
+  await closeOpenWindows(page);
+
+  const fullCompaniesList = JSON.parse(fs.readFileSync(config.PATHS.companiesFile, 'utf8'));
+  const selectedNames = options.selectedCompanies || fullCompaniesList.map((c) => c.name);
+  const companiesList = fullCompaniesList.filter((c) => selectedNames.includes(c.name));
+  const processedLog = loadProcessedLog();
+  const summaryResults = [];
+
+  let currentLabel = config.CREDENTIALS.company || 'Charge Up 101';
+  const limitPerCompany = options.maxInvoicesPerCompany || config.SCRAPER.latestInvoicesPerCompany || 10;
+
+  controller.updateProgress({
+    companyIndex: 0,
+    totalCompanies: companiesList.length,
+    downloadedInCompany: 0,
+    totalInCompany: 0,
+    globalDownloaded: 0,
+    globalTarget: companiesList.length * limitPerCompany
+  });
+
+  for (let cIdx = 0; cIdx < companiesList.length; cIdx++) {
+    await controller.checkPauseOrStop();
+
+    const company = companiesList[cIdx];
+    const companyDisplayName = `${company.name} - ${company.entityNo}`;
+    const targetShortLabel = company.name;
+    const folderKey = targetShortLabel.replace(/\s+/g, '');
+
+    controller.setActiveCompany(company);
+    controller.setActiveInvoice(null);
+    controller.updateProgress({
+      companyIndex: cIdx + 1,
+      downloadedInCompany: 0,
+      totalInCompany: 0
+    });
+
+    controller.log(`Processing queue [${cIdx + 1}/${companiesList.length}]: ${companyDisplayName}`, 'info');
+
+    // 1. Re-verify page reference
+    if (page.isClosed()) {
+      const pages = await browser.pages();
+      const citymartPage = pages.find((p) => (p.url() || '').includes('citymart.i21web.com'));
+      page = citymartPage || pages[0] || (await browser.newPage());
+    }
+
+    await closeOpenWindows(page);
+    const actualLabel = await detectActiveProfileLabel(page);
+    const activeCurrent = actualLabel || currentLabel;
+
+    // 2. Switch Company Modal (Step 2)
+    controller.setStep(2, 'Company Switcher', `Switching active entity to "${companyDisplayName}"...`);
+    await controller.checkPauseOrStop();
+
+    if (activeCurrent !== targetShortLabel && !activeCurrent.includes(targetShortLabel)) {
+      controller.log(`Switching portal entity from "${activeCurrent}" to "${companyDisplayName}"...`, 'step');
+      const switchRes = await switchCompanyByModal(page, activeCurrent, companyDisplayName);
+      if (!switchRes.ok) {
+        controller.log(`Failed to switch company: ${switchRes.reason}`, 'warn');
+        summaryResults.push({ company: company.name, status: 'SWITCH_FAILED', details: switchRes.reason });
+        continue;
+      }
+      currentLabel = targetShortLabel;
+    }
+
+    // 3. Open Invoices Grid (Step 3)
+    controller.setStep(3, 'Grid Scanner', `Opening Invoices table for ${targetShortLabel}...`);
+    await controller.checkPauseOrStop();
+
+    const navRes = await openInvoiceSearchScreen(page);
+    if (!navRes.ok) {
+      controller.log(`Failed to load invoices grid: ${navRes.reason}`, 'warn');
+      summaryResults.push({ company: company.name, status: 'NAV_FAILED', details: navRes.reason });
+      continue;
+    }
+
+    // 4. Read Rows & Filter (Step 4)
+    controller.setStep(4, 'Type Filter', `Scanning grid rows and filtering candidates...`);
+    await controller.checkPauseOrStop();
+
+    const allRows = await readInvoiceRowsFromGrid(page);
+    const alreadySaved = new Set(processedLog[folderKey] || []);
+
+    const candidates = allRows
+      .filter((r) => r.isInvoice && !r.isCreditMemo && !alreadySaved.has(r.invoiceNumber))
+      .sort((a, b) => {
+        if (a.invoiceDate && b.invoiceDate) {
+          return new Date(b.invoiceDate) - new Date(a.invoiceDate);
+        }
+        return 0;
+      })
+      .slice(0, limitPerCompany);
+
+    controller.updateProgress({
+      totalInCompany: candidates.length,
+      downloadedInCompany: 0
+    });
+
+    controller.log(
+      `Found ${candidates.length} new invoices for ${targetShortLabel} (${alreadySaved.size} already saved).`,
+      'info'
+    );
+
+    if (candidates.length === 0) {
+      summaryResults.push({ company: company.name, status: 'DONE', details: 'No new invoices' });
+      continue;
+    }
+
+    const targetDir = ensureCompanyFolder(targetShortLabel);
+    let savedCount = 0;
+
+    // 5. Process Invoices (Step 5: Exporting)
+    for (const candidate of candidates) {
+      await controller.checkPauseOrStop();
+
+      controller.setActiveInvoice(candidate.invoiceNumber);
+      controller.setStep(
+        5,
+        'PDF Exporting',
+        `Exporting invoice #${candidate.invoiceNumber} (${candidate.invoiceDate || 'No Date'})...`
+      );
+
+      controller.log(`Double-clicking invoice row: ${candidate.invoiceNumber}...`, 'step');
+      const opened = await openInvoiceRow(page, candidate.invoiceNumber);
+      if (!opened) {
+        controller.log(`Could not open row for ${candidate.invoiceNumber}`, 'warn');
+        continue;
+      }
+
+      await controller.checkPauseOrStop();
+
+      const extractedDate = await extractDueDate(page, 4000);
+      const dueDate = extractedDate || candidate.dueDate;
+
+      controller.log(`Exporting PDF via DevExpress toolbar for #${candidate.invoiceNumber}...`, 'step');
+      const exportResult = await exportInvoiceToFolder(
+        page,
+        tmpDownloadDir,
+        targetDir,
+        candidate.invoiceNumber,
+        dueDate
+      );
+
+      if (exportResult.ok) {
+        savedCount += 1;
+        alreadySaved.add(candidate.invoiceNumber);
+        processedLog[folderKey] = [...alreadySaved];
+        saveProcessedLog(processedLog);
+
+        const currentProg = controller.progress;
+        controller.updateProgress({
+          downloadedInCompany: savedCount,
+          globalDownloaded: (currentProg.globalDownloaded || 0) + 1
+        });
+
+        controller.log(
+          `[SUCCESS] Saved ${candidate.invoiceNumber} -> ${path.basename(exportResult.path)} (${(exportResult.size / 1024).toFixed(1)} KB)`,
+          'success',
+          {
+            invoiceNumber: candidate.invoiceNumber,
+            company: targetShortLabel,
+            path: exportResult.path,
+            size: exportResult.size,
+            dueDate
+          }
+        );
+
+        controller.emit('invoice_downloaded', {
+          invoiceNumber: candidate.invoiceNumber,
+          company: targetShortLabel,
+          invoiceDate: candidate.invoiceDate,
+          dueDate,
+          path: exportResult.path,
+          size: exportResult.size,
+          timestamp: Date.now()
+        });
+      } else {
+        controller.log(`Export failed for ${candidate.invoiceNumber}: ${exportResult.reason}`, 'warn');
+      }
+
+      await closeReportViewer(page);
+      await closeOpenWindows(page);
+      await openInvoiceSearchScreen(page);
+    }
+
+    summaryResults.push({
+      company: company.name,
+      status: 'DONE',
+      details: `${savedCount} saved / ${candidates.length} attempted`
+    });
+  }
+
+  controller.setActiveInvoice(null);
+  controller.setActiveCompany(null);
+  saveProcessedLog(processedLog);
+
+  if (!fs.existsSync(config.PATHS.data)) {
+    fs.mkdirSync(config.PATHS.data, { recursive: true });
+  }
+  fs.writeFileSync(config.PATHS.runSummaryFile, JSON.stringify(summaryResults, null, 2), 'utf8');
+
+  return { ok: true, summary: summaryResults };
+}
+
 if (require.main === module) {
   runBot().catch((err) => {
     console.error('Fatal bot error:', err.message);
   });
 }
 
-module.exports = { runBot };
+module.exports = {
+  runBot,
+  runBotProgrammatic
+};
+

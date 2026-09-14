@@ -4,7 +4,8 @@
   "description": "Automated Web Scraper and Invoice Extraction Bot for CityMart Portal",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/bot.js",
+    "start": "node src/dashboard/server.js",
+    "dashboard": "node src/dashboard/server.js",
     "bot": "node src/bot.js",
     "server": "node scripts/browser-server.js",
     "open-chrome": "open-chrome-debug.bat",
@@ -23,7 +24,9 @@
   "type": "commonjs",
   "dependencies": {
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "node-fetch": "^2.7.0",
-    "puppeteer": "^25.9.0"
+    "puppeteer": "^25.9.0",
+    "ws": "^8.21.3"
   }
 }
