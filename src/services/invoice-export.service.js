@@ -151,35 +151,71 @@ function getMonitoredDownloadDirs(primaryDir) {
   return dirs;
 }
 
-async function waitForNewDownloadedFile(primaryDir, existingFilesMap, timeoutMs = 20000) {
+function clearTempDownloadDir(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    return;
+  }
+  try {
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+      if (file !== '.gitkeep') {
+        try {
+          fs.unlinkSync(path.join(dir, file));
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
+}
+
+async function waitForNewDownloadedFile(primaryDir, startTimestamp, existingUserDownloads, timeoutMs = 25000) {
   const start = Date.now();
-  const dirs = getMonitoredDownloadDirs(primaryDir);
+  const userDownloads = path.join(process.env.USERPROFILE || process.env.HOME || '', 'Downloads');
 
   while (Date.now() - start < timeoutMs) {
-    for (const dir of dirs) {
-      if (fs.existsSync(dir)) {
-        try {
-          const files = fs.readdirSync(dir).filter(
-            (f) =>
-              !f.endsWith('.crdownload') &&
-              !f.endsWith('.tmp') &&
-              (f.toLowerCase().endsWith('.pdf') || !f.includes('.'))
-          );
-          const initialSet = existingFilesMap.get(dir) || new Set();
-          const newFile = files.find((f) => !initialSet.has(f));
+    // 1. Check primary tmp download directory first
+    if (fs.existsSync(primaryDir)) {
+      try {
+        const files = fs.readdirSync(primaryDir).filter(
+          (f) => !f.endsWith('.crdownload') && !f.endsWith('.tmp') && f !== '.gitkeep'
+        );
+        for (const file of files) {
+          const fullPath = path.join(primaryDir, file);
+          const stat = fs.statSync(fullPath);
+          if (stat.size > 0) {
+            // Wait for file write to stabilize
+            await new Promise((r) => setTimeout(r, 600));
+            const statAfter = fs.statSync(fullPath);
+            if (statAfter.size === stat.size) {
+              return fullPath;
+            }
+          }
+        }
+      } catch (e) {}
+    }
 
-          if (newFile) {
-            const fullPath = path.join(dir, newFile);
-            // Verify file has non-zero size and is not locked
-            let stat = fs.statSync(fullPath);
-            if (stat.size > 0) {
+    // 2. Check user Downloads directory as fallback
+    if (userDownloads && fs.existsSync(userDownloads)) {
+      try {
+        const files = fs.readdirSync(userDownloads).filter(
+          (f) =>
+            !f.endsWith('.crdownload') &&
+            !f.endsWith('.tmp') &&
+            (f.toLowerCase().endsWith('.pdf') || f.includes('InvoiceMainReport'))
+        );
+        for (const file of files) {
+          if (!existingUserDownloads.has(file)) {
+            const fullPath = path.join(userDownloads, file);
+            const stat = fs.statSync(fullPath);
+            if (stat.mtimeMs >= startTimestamp && stat.size > 0) {
               await new Promise((r) => setTimeout(r, 600));
               return fullPath;
             }
           }
-        } catch (e) {}
-      }
+        }
+      } catch (e) {}
     }
+
     await new Promise((r) => setTimeout(r, 400));
   }
   return null;
@@ -199,16 +235,14 @@ function ensureCompanyFolder(companyLabel) {
 }
 
 async function exportInvoiceToFolder(page, tmpDownloadDir, targetDir, invoiceNumber, dueDate) {
-  fs.mkdirSync(tmpDownloadDir, { recursive: true });
-  const dirs = getMonitoredDownloadDirs(tmpDownloadDir);
-  const existingFilesMap = new Map();
-  for (const dir of dirs) {
-    if (fs.existsSync(dir)) {
-      existingFilesMap.set(dir, new Set(fs.readdirSync(dir)));
-    } else {
-      existingFilesMap.set(dir, new Set());
-    }
-  }
+  // Clean temp folder before each export to prevent collision
+  clearTempDownloadDir(tmpDownloadDir);
+
+  const startTimestamp = Date.now() - 1000;
+  const userDownloads = path.join(process.env.USERPROFILE || process.env.HOME || '', 'Downloads');
+  const existingUserDownloads = new Set(
+    userDownloads && fs.existsSync(userDownloads) ? fs.readdirSync(userDownloads) : []
+  );
 
   const clickedExport = await humanClickExportButton(page);
   if (!clickedExport) {
@@ -217,9 +251,11 @@ async function exportInvoiceToFolder(page, tmpDownloadDir, targetDir, invoiceNum
 
   const downloadedPath = await waitForNewDownloadedFile(
     tmpDownloadDir,
-    existingFilesMap,
+    startTimestamp,
+    existingUserDownloads,
     config.SCRAPER.downloadTimeoutMs
   );
+
   if (!downloadedPath) {
     return { ok: false, reason: 'PDF download timed out' };
   }
@@ -233,7 +269,8 @@ async function exportInvoiceToFolder(page, tmpDownloadDir, targetDir, invoiceNum
     fs.unlinkSync(downloadedPath);
   } catch (e) {}
 
-  return { ok: true, path: finalPath };
+  const stats = fs.statSync(finalPath);
+  return { ok: true, path: finalPath, size: stats.size };
 }
 
 async function closeReportViewer(page) {
