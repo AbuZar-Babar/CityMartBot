@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 const { getLoggedInPage } = require('./core/browser');
+const { sleep } = require('./core/human');
+const { getStepDelay, getSettings } = require('./core/settings');
 const {
   closeOpenWindows,
   detectActiveProfileLabel,
@@ -323,6 +325,7 @@ async function processCompanyInvoices(page, targetShortLabel, folderKey, tmpDown
 }
 
 async function runBotProgrammatic(controller, options = {}) {
+  const settings = getSettings();
   controller.log('Initializing browser and connecting to Chrome on port 9222...', 'info');
   controller.setStep(1, 'Connecting Daemon', 'Connecting to Chrome browser daemon (Port 9222)...');
 
@@ -331,6 +334,10 @@ async function runBotProgrammatic(controller, options = {}) {
 
   controller.log('Verifying user authentication...', 'info');
   await ensureLoggedIn(page);
+  await controller.checkPauseOrStop();
+
+  // Step 1: Daemon & Auth Delay
+  await sleep(getStepDelay('step1_daemon'));
   await controller.checkPauseOrStop();
 
   const tmpDownloadDir = config.PATHS.tmpDownloads;
@@ -357,7 +364,7 @@ async function runBotProgrammatic(controller, options = {}) {
     if (!page.url().includes('#home')) {
       await page.goto(`${config.PORTAL_URL}#home`, {
         waitUntil: 'domcontentloaded',
-        timeout: config.SCRAPER.navigationTimeoutMs
+        timeout: settings.navigationTimeoutMs || config.SCRAPER.navigationTimeoutMs
       });
     }
   } catch (navErr) {}
@@ -371,7 +378,7 @@ async function runBotProgrammatic(controller, options = {}) {
   const summaryResults = [];
 
   let currentLabel = config.CREDENTIALS.company || 'Charge Up 101';
-  const limitPerCompany = options.maxInvoicesPerCompany || config.SCRAPER.latestInvoicesPerCompany || 10;
+  const limitPerCompany = options.maxInvoicesPerCompany || settings.maxInvoicesPerCompany || config.SCRAPER.latestInvoicesPerCompany || 10;
 
   controller.updateProgress({
     companyIndex: 0,
@@ -424,6 +431,9 @@ async function runBotProgrammatic(controller, options = {}) {
         continue;
       }
       currentLabel = targetShortLabel;
+      // Step 2 Post-Switch Delay
+      await sleep(getStepDelay('step2_companySwitch'));
+      await controller.checkPauseOrStop();
     }
 
     // 3. Open Invoices Grid (Step 3)
@@ -436,6 +446,10 @@ async function runBotProgrammatic(controller, options = {}) {
       summaryResults.push({ company: company.name, status: 'NAV_FAILED', details: navRes.reason });
       continue;
     }
+
+    // Step 3 Post-Grid Load Delay
+    await sleep(getStepDelay('step3_gridNav'));
+    await controller.checkPauseOrStop();
 
     // 4. Read Rows & Filter (Step 4)
     controller.setStep(4, 'Type Filter', `Scanning grid rows and filtering candidates...`);
@@ -464,6 +478,10 @@ async function runBotProgrammatic(controller, options = {}) {
       'info'
     );
 
+    // Step 4 Post-Scan Delay
+    await sleep(getStepDelay('step4_scanFilter'));
+    await controller.checkPauseOrStop();
+
     if (candidates.length === 0) {
       summaryResults.push({ company: company.name, status: 'DONE', details: 'No new invoices' });
       continue;
@@ -490,10 +508,16 @@ async function runBotProgrammatic(controller, options = {}) {
         continue;
       }
 
+      // Step 5: Open Invoice Delay
+      await sleep(getStepDelay('step5_openInvoice'));
       await controller.checkPauseOrStop();
 
       const extractedDate = await extractDueDate(page, 4000);
       const dueDate = extractedDate || candidate.dueDate;
+
+      // Step 5: DevExpress Toolbar mount delay before export
+      await sleep(getStepDelay('step5_exportReport'));
+      await controller.checkPauseOrStop();
 
       controller.log(`Exporting PDF via DevExpress toolbar for #${candidate.invoiceNumber}...`, 'step');
       const exportResult = await exportInvoiceToFolder(
@@ -543,7 +567,19 @@ async function runBotProgrammatic(controller, options = {}) {
 
       await closeReportViewer(page);
       await closeOpenWindows(page);
+
+      // Step 5: Post-Export Cleanup Delay
+      await sleep(getStepDelay('step5_postExport'));
+      await controller.checkPauseOrStop();
+
       await openInvoiceSearchScreen(page);
+
+      // Inter-Invoice Cooldown Delay
+      const currentSettings = getSettings();
+      if (currentSettings.delayBetweenInvoicesMs > 0) {
+        await sleep(currentSettings.delayBetweenInvoicesMs);
+      }
+      await controller.checkPauseOrStop();
     }
 
     summaryResults.push({
@@ -551,6 +587,13 @@ async function runBotProgrammatic(controller, options = {}) {
       status: 'DONE',
       details: `${savedCount} saved / ${candidates.length} attempted`
     });
+
+    // Inter-Company Cooldown Delay
+    const currentSettings = getSettings();
+    if (cIdx < companiesList.length - 1 && currentSettings.delayBetweenCompaniesMs > 0) {
+      controller.log(`Waiting ${currentSettings.delayBetweenCompaniesMs}ms before next company entity...`, 'info');
+      await sleep(currentSettings.delayBetweenCompaniesMs);
+    }
   }
 
   controller.setActiveInvoice(null);

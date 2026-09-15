@@ -1,3 +1,5 @@
+const { getSettings, calculateDelay } = require('./settings');
+
 let globalDelayMultiplier = 1.0;
 
 function setDelayMultiplier(multiplier) {
@@ -11,9 +13,12 @@ function getDelayMultiplier() {
 function randomDelay(min = 100, max = 300) {
   const scaledMin = Math.round(min * globalDelayMultiplier);
   const scaledMax = Math.max(scaledMin, Math.round(max * globalDelayMultiplier));
-  return new Promise((resolve) =>
-    setTimeout(resolve, Math.floor(Math.random() * (scaledMax - scaledMin + 1)) + scaledMin)
-  );
+  const base = Math.floor(Math.random() * (scaledMax - scaledMin + 1)) + scaledMin;
+  return new Promise((resolve) => setTimeout(resolve, calculateDelay(base)));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, calculateDelay(ms)));
 }
 
 /**
@@ -23,8 +28,12 @@ async function humanClickHandle(page, handle) {
   const el = handle.asElement ? handle.asElement() : handle;
   if (!el) return false;
 
+  const settings = getSettings();
+  const clickBase = Number(settings.clickDelayMs) || 150;
+  const ratio = clickBase / 150;
+
   await page.evaluate((e) => e.scrollIntoView({ block: 'center', inline: 'nearest' }), el);
-  await randomDelay(150, 300);
+  await randomDelay(100 * ratio, 200 * ratio);
 
   const box = await el.boundingBox();
   if (!box) return false;
@@ -32,14 +41,14 @@ async function humanClickHandle(page, handle) {
   const x = box.x + box.width / 2 + (Math.random() * 6 - 3);
   const y = box.y + box.height / 2 + (Math.random() * 6 - 3);
 
-  await page.mouse.move(x - 20, y - 10, { steps: 5 });
-  await randomDelay(80, 180);
-  await page.mouse.move(x, y, { steps: 10 });
-  await randomDelay(100, 250);
+  await page.mouse.move(x - 20, y - 10, { steps: Math.max(2, Math.round(5 * ratio)) });
+  await randomDelay(50 * ratio, 120 * ratio);
+  await page.mouse.move(x, y, { steps: Math.max(3, Math.round(8 * ratio)) });
+  await randomDelay(60 * ratio, 150 * ratio);
   await page.mouse.down();
-  await randomDelay(50, 120);
+  await randomDelay(40 * ratio, 90 * ratio);
   await page.mouse.up();
-  await randomDelay(150, 350);
+  await randomDelay(100 * ratio, 250 * ratio);
   return true;
 }
 
@@ -50,8 +59,12 @@ async function humanDoubleClickHandle(page, handle) {
   const el = handle.asElement ? handle.asElement() : handle;
   if (!el) return false;
 
+  const settings = getSettings();
+  const dblBase = Number(settings.doubleClickDelayMs) || 100;
+  const ratio = dblBase / 100;
+
   await page.evaluate((e) => e.scrollIntoView({ block: 'center', inline: 'nearest' }), el);
-  await randomDelay(100, 200);
+  await randomDelay(80 * ratio, 150 * ratio);
 
   const box = await el.boundingBox();
   if (!box) return false;
@@ -59,20 +72,20 @@ async function humanDoubleClickHandle(page, handle) {
   const x = box.x + box.width / 2 + (Math.random() * 4 - 2);
   const y = box.y + box.height / 2 + (Math.random() * 4 - 2);
 
-  await page.mouse.move(x - 15, y - 5, { steps: 4 });
-  await randomDelay(40, 80);
-  await page.mouse.move(x, y, { steps: 5 });
-  await randomDelay(40, 80);
+  await page.mouse.move(x - 15, y - 5, { steps: Math.max(2, Math.round(4 * ratio)) });
+  await randomDelay(30 * ratio, 60 * ratio);
+  await page.mouse.move(x, y, { steps: Math.max(2, Math.round(5 * ratio)) });
+  await randomDelay(30 * ratio, 60 * ratio);
 
   // Click 1
   await page.mouse.down({ clickCount: 1 });
-  await randomDelay(20, 50);
+  await randomDelay(15 * ratio, 40 * ratio);
   await page.mouse.up({ clickCount: 1 });
-  await randomDelay(30, 60);
+  await randomDelay(20 * ratio, 50 * ratio);
 
   // Click 2 (Registers OS-level Double Click)
   await page.mouse.down({ clickCount: 2 });
-  await randomDelay(20, 50);
+  await randomDelay(15 * ratio, 40 * ratio);
   await page.mouse.up({ clickCount: 2 });
   
   // Fallback: trigger DOM dblclick event directly on element if needed by ExtJS
@@ -87,7 +100,7 @@ async function humanDoubleClickHandle(page, handle) {
     } catch (e) {}
   }, el).catch(() => {});
 
-  await randomDelay(100, 250);
+  await randomDelay(80 * ratio, 200 * ratio);
   return true;
 }
 
@@ -105,10 +118,15 @@ async function humanClick(page, selector) {
  * Types text character by character with randomized speed and natural pauses.
  */
 async function humanType(page, selector, text) {
+  const settings = getSettings();
+  const typingBase = Number(settings.typingDelayMs) || 70;
   await page.focus(selector);
   for (const char of text) {
-    await page.keyboard.type(char, { delay: Math.floor(Math.random() * 90) + 60 });
-    if (Math.random() < 0.06) await randomDelay(150, 400); // occasional human pause
+    const charDelay = Math.max(10, Math.floor(typingBase + (Math.random() * 30 - 15)));
+    await page.keyboard.type(char, { delay: charDelay });
+    if (settings.enableHumanJitter && Math.random() < 0.06) {
+      await randomDelay(100, 300); // occasional human pause
+    }
   }
 }
 
@@ -142,7 +160,7 @@ async function humanClickByText(page, text, { exact = false, timeoutMs = 10000 }
     } else {
       await handle.dispose();
     }
-    await randomDelay(300, 600);
+    await randomDelay(200, 400);
   }
   return false;
 }
@@ -181,12 +199,13 @@ async function humanClickTopmostByText(page, text, { exact = false, timeoutMs = 
     } else {
       await handle.dispose();
     }
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 200));
   }
   return false;
 }
 
 module.exports = {
+  sleep,
   randomDelay,
   setDelayMultiplier,
   getDelayMultiplier,

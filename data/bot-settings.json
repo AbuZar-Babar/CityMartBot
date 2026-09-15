@@ -1,0 +1,20 @@
+{
+  "clickDelayMs": 300,
+  "doubleClickDelayMs": 200,
+  "typingDelayMs": 120,
+  "enableHumanJitter": true,
+  "stepDelays": {
+    "step1_daemon": 2000,
+    "step2_companySwitch": 3000,
+    "step3_gridNav": 2500,
+    "step4_scanFilter": 1200,
+    "step5_openInvoice": 2500,
+    "step5_exportReport": 3500,
+    "step5_postExport": 2000
+  },
+  "delayBetweenInvoicesMs": 2500,
+  "delayBetweenCompaniesMs": 5000,
+  "maxInvoicesPerCompany": 10,
+  "navigationTimeoutMs": 30000,
+  "downloadTimeoutMs": 25000
+}

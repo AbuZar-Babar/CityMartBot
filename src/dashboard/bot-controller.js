@@ -3,14 +3,23 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
 const { setDelayMultiplier } = require('../core/human');
+const {
+  getSettings,
+  updateSettings,
+  resetToDefaults,
+  applyPreset,
+  getStepDelay
+} = require('../core/settings');
 
 class BotController extends EventEmitter {
   constructor() {
     super();
     this.status = 'IDLE'; // IDLE | STARTING | RUNNING | PAUSED | STOPPING | STOPPED | ERROR
     this.autoMode = true;
-    this.delayMs = 250;
-    this.maxInvoicesPerCompany = config.SCRAPER.latestInvoicesPerCompany || 10;
+    
+    const initialSettings = getSettings();
+    this.delayMs = initialSettings.clickDelayMs || 150;
+    this.maxInvoicesPerCompany = initialSettings.maxInvoicesPerCompany || 10;
     
     this.currentStep = {
       stage: 1, // 1: Daemon, 2: Switcher, 3: Grid Read, 4: Filtering, 5: Exporting
@@ -95,13 +104,55 @@ class BotController extends EventEmitter {
   }
 
   setSpeed(delayMs) {
-    const ms = Math.max(50, Math.min(2000, Number(delayMs) || 250));
+    const ms = Math.max(20, Math.min(2000, Number(delayMs) || 150));
     this.delayMs = ms;
-    // Map 250ms -> 1.0x, 100ms -> 0.4x, 500ms -> 2.0x
-    const multiplier = ms / 250;
+    updateSettings({ clickDelayMs: ms });
+    const multiplier = ms / 150;
     setDelayMultiplier(multiplier);
-    this.log(`Operation delay calibrated to ${ms}ms (${multiplier.toFixed(2)}x human cadence)`, 'info');
+    this.log(`Click interaction delay calibrated to ${ms}ms`, 'info');
+    this.emit('settings', getSettings());
     this.emit('state', this.getState());
+  }
+
+  getSettings() {
+    return getSettings();
+  }
+
+  updateSettings(patch) {
+    const updated = updateSettings(patch);
+    if (updated.clickDelayMs) {
+      this.delayMs = updated.clickDelayMs;
+      setDelayMultiplier(updated.clickDelayMs / 150);
+    }
+    if (updated.maxInvoicesPerCompany) {
+      this.maxInvoicesPerCompany = updated.maxInvoicesPerCompany;
+    }
+    this.log('Bot configuration and timing settings updated.', 'info');
+    this.emit('settings', updated);
+    this.emit('state', this.getState());
+    return updated;
+  }
+
+  resetSettings() {
+    const defaults = resetToDefaults();
+    this.delayMs = defaults.clickDelayMs;
+    this.maxInvoicesPerCompany = defaults.maxInvoicesPerCompany;
+    setDelayMultiplier(1.0);
+    this.log('Bot timing configuration reset to recommended defaults.', 'warn');
+    this.emit('settings', defaults);
+    this.emit('state', this.getState());
+    return defaults;
+  }
+
+  applyPreset(presetKey) {
+    const updated = applyPreset(presetKey);
+    this.delayMs = updated.clickDelayMs;
+    this.maxInvoicesPerCompany = updated.maxInvoicesPerCompany;
+    setDelayMultiplier(updated.clickDelayMs / 150);
+    this.log(`Applied speed preset: "${presetKey.toUpperCase()}"`, 'info');
+    this.emit('settings', updated);
+    this.emit('state', this.getState());
+    return updated;
   }
 
   getState() {
@@ -110,6 +161,7 @@ class BotController extends EventEmitter {
       autoMode: this.autoMode,
       delayMs: this.delayMs,
       maxInvoicesPerCompany: this.maxInvoicesPerCompany,
+      settings: getSettings(),
       currentStep: this.currentStep,
       activeCompany: this.activeCompany,
       activeInvoice: this.activeInvoice,

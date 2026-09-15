@@ -26,8 +26,11 @@ function broadcast(data) {
   });
 }
 
+const { PRESETS } = require('../core/settings');
+
 // Forward controller events to all connected clients
 botController.on('state', (state) => broadcast({ type: 'STATE_UPDATE', data: state }));
+botController.on('settings', (settings) => broadcast({ type: 'SETTINGS_UPDATE', data: settings }));
 botController.on('log', (log) => broadcast({ type: 'LOG_ENTRY', data: log }));
 botController.on('step', (step) => broadcast({ type: 'STEP_UPDATE', data: step }));
 botController.on('progress', (prog) => broadcast({ type: 'PROGRESS_UPDATE', data: prog }));
@@ -36,8 +39,12 @@ botController.on('invoice_downloaded', (inv) =>
 );
 
 wss.on('connection', (ws) => {
-  // Send immediate state sync on connect
-  ws.send(JSON.stringify({ type: 'INIT_STATE', data: botController.getState() }));
+  // Send immediate state and settings sync on connect
+  ws.send(JSON.stringify({
+    type: 'INIT_STATE',
+    data: botController.getState(),
+    presets: PRESETS
+  }));
 
   ws.on('message', async (message) => {
     try {
@@ -54,6 +61,12 @@ wss.on('connection', (ws) => {
         botController.stop();
       } else if (msg.type === 'SET_SPEED') {
         botController.setSpeed(msg.delayMs);
+      } else if (msg.type === 'UPDATE_SETTINGS') {
+        botController.updateSettings(msg.settings || {});
+      } else if (msg.type === 'APPLY_PRESET') {
+        botController.applyPreset(msg.preset);
+      } else if (msg.type === 'RESET_SETTINGS') {
+        botController.resetSettings();
       }
     } catch (err) {
       ws.send(JSON.stringify({ type: 'ERROR', message: err.message }));
@@ -223,6 +236,46 @@ app.post('/api/bot/stop', (req, res) => {
 app.post('/api/bot/speed', (req, res) => {
   botController.setSpeed(req.body.delayMs);
   res.json({ ok: true, delayMs: botController.delayMs });
+});
+
+// 8. Settings Management Endpoints
+app.get('/api/settings', (req, res) => {
+  res.json({
+    ok: true,
+    settings: botController.getSettings(),
+    presets: PRESETS
+  });
+});
+
+app.post('/api/settings', (req, res) => {
+  try {
+    const updated = botController.updateSettings(req.body || {});
+    res.json({ ok: true, settings: updated });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/settings/preset', (req, res) => {
+  try {
+    const { preset } = req.body;
+    if (!preset || !PRESETS[preset]) {
+      return res.status(400).json({ ok: false, error: `Invalid preset: ${preset}` });
+    }
+    const updated = botController.applyPreset(preset);
+    res.json({ ok: true, settings: updated });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/settings/reset', (req, res) => {
+  try {
+    const defaults = botController.resetSettings();
+    res.json({ ok: true, settings: defaults });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // -----------------------------------------------------------------------------

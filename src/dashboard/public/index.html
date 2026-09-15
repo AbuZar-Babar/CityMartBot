@@ -30,265 +30,646 @@
       </div>
     </div>
 
+    <!-- CENTER NAVIGATION TABS -->
     <div class="topbar-center">
-      <div class="session-pill">
-        <span class="pill-icon"><i data-lucide="user"></i></span>
-        <span class="pill-label">Session:</span>
-        <strong id="sessionUser">Authenticated User</strong>
-        <span class="pill-sep">•</span>
-        <span class="pill-label">Entity:</span>
-        <strong id="activeEntityLabel" class="highlight-cyan">[Ready]</strong>
-      </div>
+      <nav class="nav-tabs-wrapper">
+        <button class="nav-tab active" id="tabBtnCockpit" data-tab="tabCockpit">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Live Cockpit</span>
+        </button>
+        <button class="nav-tab" id="tabBtnSettings" data-tab="tabSettings">
+          <i data-lucide="sliders-horizontal"></i>
+          <span>Configuration & Delays</span>
+          <span class="tab-badge" id="activePresetBadge">STEALTH</span>
+        </button>
+      </nav>
     </div>
 
     <div class="topbar-right">
+      <div class="session-box">
+        <span class="session-icon"><i data-lucide="user-check"></i></span>
+        <div class="session-details">
+          <span class="session-user" id="sessionUser">Authenticated User</span>
+          <span class="session-entity" id="activeEntityLabel">[Ready]</span>
+        </div>
+      </div>
       <button class="btn btn-secondary btn-sm" id="btnOpenFolder" title="Open output folder in File Explorer">
         <i data-lucide="folder"></i>
-        <span>Open Invoices Folder</span>
+        <span>Invoices</span>
       </button>
       <button class="btn btn-ghost btn-sm" id="btnClearHistory" title="Reset downloaded history so bot re-checks all">
         <i data-lucide="rotate-ccw"></i>
-        <span>Reset History</span>
+        <span>Reset</span>
       </button>
     </div>
   </header>
 
-  <!-- MAIN COCKPIT CONTAINER -->
+  <!-- MAIN CONTAINER -->
   <main class="cockpit-container">
     
-    <!-- HERO CONTROL DECK -->
-    <section class="card control-deck">
-      <div class="control-deck-header">
-        <div class="active-task-wrapper">
-          <div class="pulse-indicator" id="pulseIndicator"></div>
-          <div>
-            <span class="control-label">CURRENT OPERATION</span>
-            <h2 class="active-operation-text" id="activeOpText">Bot is Idle. Press Start to begin queue.</h2>
-          </div>
-        </div>
-
-        <div class="deck-actions">
-          <!-- Playback controls -->
-          <button class="btn btn-primary btn-lg" id="btnStart">
-            <span class="btn-icon" id="btnStartIcon"><i data-lucide="play"></i></span>
-            <span id="btnStartText">Start Automation</span>
-          </button>
-          <button class="btn btn-warning btn-lg" id="btnPause" disabled>
-            <span class="btn-icon" id="btnPauseIcon"><i data-lucide="pause"></i></span>
-            <span id="btnPauseText">Pause</span>
-          </button>
-          <button class="btn btn-info btn-lg" id="btnStep" disabled title="Advance 1 step while paused">
-            <span class="btn-icon"><i data-lucide="step-forward"></i></span>
-            <span>Step</span>
-          </button>
-          <button class="btn btn-danger btn-lg" id="btnStop" disabled>
-            <span class="btn-icon"><i data-lucide="square"></i></span>
-            <span>Stop</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="control-deck-footer">
-        <!-- Speed Slider -->
-        <div class="slider-group">
-          <div class="slider-header">
-            <span class="control-label">INTERACTION SPEED & DELAY</span>
-            <span class="slider-value" id="delayValueText">250ms (Human Stealth)</span>
-          </div>
-          <div class="slider-controls">
-            <input type="range" id="delaySlider" min="50" max="1000" step="25" value="250">
-            <div class="speed-presets">
-              <button class="btn-preset" data-ms="80">Turbo (80ms)</button>
-              <button class="btn-preset active" data-ms="250">Stealth (250ms)</button>
-              <button class="btn-preset" data-ms="500">Safe (500ms)</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Progress Overview -->
-        <div class="progress-group">
-          <div class="progress-header">
-            <span class="control-label">OVERALL DOWNLOAD QUEUE</span>
-            <span class="progress-metric" id="progressMetricText">0 / 0 Invoices (0%)</span>
-          </div>
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
-          </div>
-          <div class="progress-sub">
-            <span id="currentCompanyProgress">Current Company: Idle</span>
-            <span id="queueTimeElapsed">Time: 00:00:00</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5-STAGE VISUAL EXECUTION STEPPER -->
-    <section class="card stepper-card">
-      <div class="stepper-grid">
-        <div class="step-node" id="stepNode1" data-step="1">
-          <div class="step-num">1</div>
-          <div class="step-info">
-            <h4>Chrome Daemon</h4>
-            <p>CDP Port 9222</p>
-          </div>
-        </div>
-        <div class="step-line" id="stepLine1"></div>
-
-        <div class="step-node" id="stepNode2" data-step="2">
-          <div class="step-num">2</div>
-          <div class="step-info">
-            <h4>Entity Switcher</h4>
-            <p>#portalEntity Modal</p>
-          </div>
-        </div>
-        <div class="step-line" id="stepLine2"></div>
-
-        <div class="step-node" id="stepNode3" data-step="3">
-          <div class="step-num">3</div>
-          <div class="step-info">
-            <h4>Grid Scanner</h4>
-            <p>ExtJS Rows</p>
-          </div>
-        </div>
-        <div class="step-line" id="stepLine3"></div>
-
-        <div class="step-node" id="stepNode4" data-step="4">
-          <div class="step-num">4</div>
-          <div class="step-info">
-            <h4>Type Filter</h4>
-            <p>Invoice Verification</p>
-          </div>
-        </div>
-        <div class="step-line" id="stepLine4"></div>
-
-        <div class="step-node" id="stepNode5" data-step="5">
-          <div class="step-num">5</div>
-          <div class="step-info">
-            <h4>PDF Export</h4>
-            <p>DevExpress XtraReports</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TWO-COLUMN WORKSPACE -->
-    <div class="workspace-grid">
+    <!-- ========================================================================= -->
+    <!-- TAB 1: LIVE COCKPIT & OPERATIONS -->
+    <!-- ========================================================================= -->
+    <div class="tab-pane active" id="tabCockpit">
       
-      <!-- LEFT COLUMN: Extracted Invoices Table & Console -->
-      <div class="workspace-main">
+      <!-- HERO CONTROL DECK -->
+      <section class="card control-deck">
+        <div class="control-deck-header">
+          <div class="active-task-wrapper">
+            <div class="pulse-indicator" id="pulseIndicator"></div>
+            <div>
+              <span class="control-label">CURRENT OPERATION</span>
+              <h2 class="active-operation-text" id="activeOpText">Bot is Idle. Press Start to begin queue.</h2>
+            </div>
+          </div>
+
+          <div class="deck-actions">
+            <!-- Playback controls -->
+            <button class="btn btn-primary btn-lg" id="btnStart">
+              <span class="btn-icon" id="btnStartIcon"><i data-lucide="play"></i></span>
+              <span id="btnStartText">Start Automation</span>
+            </button>
+            <button class="btn btn-warning btn-lg" id="btnPause" disabled>
+              <span class="btn-icon" id="btnPauseIcon"><i data-lucide="pause"></i></span>
+              <span id="btnPauseText">Pause</span>
+            </button>
+            <button class="btn btn-info btn-lg" id="btnStep" disabled title="Advance 1 step while paused">
+              <span class="btn-icon"><i data-lucide="step-forward"></i></span>
+              <span>Step</span>
+            </button>
+            <button class="btn btn-danger btn-lg" id="btnStop" disabled>
+              <span class="btn-icon"><i data-lucide="square"></i></span>
+              <span>Stop</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="control-deck-footer">
+          <!-- Speed Slider Overview -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="control-label">INTERACTION CADENCE</span>
+              <span class="slider-value" id="delayValueText">150ms (Stealth Human)</span>
+            </div>
+            <div class="slider-controls">
+              <input type="range" id="delaySlider" min="20" max="1000" step="10" value="150">
+              <div class="speed-presets">
+                <button class="btn-preset" data-preset="turbo"><i data-lucide="zap"></i><span>Turbo (50ms)</span></button>
+                <button class="btn-preset" data-preset="fast"><i data-lucide="activity"></i><span>Fast (100ms)</span></button>
+                <button class="btn-preset active" data-preset="stealth"><i data-lucide="shield-check"></i><span>Stealth (150ms)</span></button>
+                <button class="btn-preset" data-preset="safe"><i data-lucide="shield"></i><span>Safe (300ms)</span></button>
+                <button class="btn-link-preset" id="btnGoToSettings">Configure All Delays →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Overview -->
+          <div class="progress-group">
+            <div class="progress-header">
+              <span class="control-label">DOWNLOAD QUEUE PROGRESS</span>
+              <span class="progress-metric" id="progressMetricText">0 / 0 Invoices (0%)</span>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-sub">
+              <span id="currentCompanyProgress">Current Entity: Idle</span>
+              <span id="queueTimeElapsed">Elapsed: 00:00:00</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5-STAGE VISUAL EXECUTION STEPPER -->
+      <section class="card stepper-card">
+        <div class="stepper-grid">
+          <div class="step-node" id="stepNode1" data-step="1">
+            <div class="step-num">1</div>
+            <div class="step-info">
+              <h4>Chrome Daemon</h4>
+              <p id="stepperDelay1">CDP Port 9222 (1.0s)</p>
+            </div>
+          </div>
+          <div class="step-line" id="stepLine1"></div>
+
+          <div class="step-node" id="stepNode2" data-step="2">
+            <div class="step-num">2</div>
+            <div class="step-info">
+              <h4>Entity Switcher</h4>
+              <p id="stepperDelay2">#portalEntity (1.5s)</p>
+            </div>
+          </div>
+          <div class="step-line" id="stepLine2"></div>
+
+          <div class="step-node" id="stepNode3" data-step="3">
+            <div class="step-num">3</div>
+            <div class="step-info">
+              <h4>Grid Scanner</h4>
+              <p id="stepperDelay3">ExtJS Grid (1.2s)</p>
+            </div>
+          </div>
+          <div class="step-line" id="stepLine3"></div>
+
+          <div class="step-node" id="stepNode4" data-step="4">
+            <div class="step-num">4</div>
+            <div class="step-info">
+              <h4>Type Filter</h4>
+              <p id="stepperDelay4">Verify Invoices (0.6s)</p>
+            </div>
+          </div>
+          <div class="step-line" id="stepLine4"></div>
+
+          <div class="step-node" id="stepNode5" data-step="5">
+            <div class="step-num">5</div>
+            <div class="step-info">
+              <h4>PDF Export</h4>
+              <p id="stepperDelay5">DevExpress (1.8s)</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TWO-COLUMN WORKSPACE -->
+      <div class="workspace-grid">
         
-        <!-- Extracted Invoices Table -->
-        <section class="card table-card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <div class="section-heading-icon"><i data-lucide="file-text"></i></div>
-              <h3>Extracted Invoices Stream</h3>
-              <span class="badge badge-emerald" id="invoiceCountBadge">0 Downloaded</span>
+        <!-- LEFT COLUMN: Extracted Invoices Table & Console -->
+        <div class="workspace-main">
+          
+          <!-- Extracted Invoices Table -->
+          <section class="card table-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="section-heading-icon"><i data-lucide="file-text"></i></div>
+                <h3>Extracted Invoices Stream</h3>
+                <span class="badge badge-emerald" id="invoiceCountBadge">0 Downloaded</span>
+              </div>
+              <div class="table-controls">
+                <input type="text" id="invoiceSearch" class="search-input" placeholder="Filter by #, company, due date...">
+                <button class="btn btn-ghost btn-sm" id="btnRefreshInvoices">
+                  <i data-lucide="refresh-cw"></i>
+                  <span>Refresh</span>
+                </button>
+              </div>
             </div>
-            <div class="table-controls">
-              <input type="text" id="invoiceSearch" class="search-input" placeholder="Search by Invoice #, Date, Company...">
-              <button class="btn btn-ghost btn-sm" id="btnRefreshInvoices">
-                <i data-lucide="refresh-cw"></i>
-                <span>Refresh</span>
-              </button>
-            </div>
-          </div>
 
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Invoice #</th>
-                  <th>Company Entity</th>
-                  <th>Due Date</th>
-                  <th>Size</th>
-                  <th>Extracted At</th>
-                  <th style="text-align: right;">Action</th>
-                </tr>
-              </thead>
-              <tbody id="invoicesTableBody">
-                <tr class="empty-row">
-                  <td colspan="6">No invoices extracted yet. Start automation or check CityMart-Invoices folder.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Company Entity</th>
+                    <th>Due Date</th>
+                    <th>Size</th>
+                    <th>Extracted At</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="invoicesTableBody">
+                  <tr class="empty-row">
+                    <td colspan="6">No invoices extracted yet. Start automation or check CityMart-Invoices folder.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-        <!-- Live Terminal Log Feed -->
-        <section class="card log-card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <div class="section-heading-icon"><i data-lucide="terminal"></i></div>
-              <h3>Live Execution Terminal</h3>
-              <span class="live-tag">LIVE FEED</span>
+          <!-- Live Terminal Log Feed -->
+          <section class="card log-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="section-heading-icon"><i data-lucide="terminal"></i></div>
+                <h3>Live Execution Terminal</h3>
+                <span class="live-tag">LIVE</span>
+              </div>
+              <div class="log-actions">
+                <button class="btn-filter active" data-filter="all">All</button>
+                <button class="btn-filter" data-filter="success">Success</button>
+                <button class="btn-filter" data-filter="warn">Warnings</button>
+                <button class="btn-filter" data-filter="error">Errors</button>
+                <button class="btn btn-ghost btn-xs" id="btnClearLogs">Clear</button>
+              </div>
             </div>
-            <div class="log-actions">
-              <button class="btn-filter active" data-filter="all">All</button>
-              <button class="btn-filter" data-filter="success">Success</button>
-              <button class="btn-filter" data-filter="warn">Warnings</button>
-              <button class="btn-filter" data-filter="error">Errors</button>
-              <button class="btn btn-ghost btn-xs" id="btnClearLogs">Clear</button>
+            <div class="terminal-container" id="terminalOutput">
+              <div class="log-line log-info"><span class="log-time">[Init]</span> Dashboard initialized and ready.</div>
             </div>
-          </div>
-          <div class="terminal-container" id="terminalOutput">
-            <div class="log-line log-info"><span class="log-time">[Init]</span> Dashboard initialized and ready.</div>
-          </div>
-        </section>
+          </section>
+        </div>
+
+        <!-- RIGHT COLUMN: Company Queue & Metrics -->
+        <aside class="workspace-sidebar">
+          
+          <!-- Target Entities Checklist -->
+          <section class="card sidebar-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="section-heading-icon"><i data-lucide="building-2"></i></div>
+                <h3>Target Entities Queue</h3>
+              </div>
+              <div class="queue-header-actions">
+                <button class="btn-link" id="btnSelectAll">All</button>
+                <button class="btn-link" id="btnSelectNone">None</button>
+              </div>
+            </div>
+            <p class="sidebar-sub">Select companies to process:</p>
+            <div class="companies-queue-list" id="companiesQueueList">
+              <div class="loading-spinner">Loading entities...</div>
+            </div>
+          </section>
+
+          <!-- Key Metrics Panel -->
+          <section class="card sidebar-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="section-heading-icon"><i data-lucide="activity"></i></div>
+                <h3>Session Telemetry</h3>
+              </div>
+            </div>
+            <div class="metrics-grid">
+              <div class="metric-box">
+                <span class="metric-num highlight-emerald" id="metricTotalInvoices">0</span>
+                <span class="metric-label">Invoices Saved</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-num highlight-cyan" id="metricStorage">0 KB</span>
+                <span class="metric-label">Disk Storage</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-num highlight-amber" id="metricSpeed">~1.8s</span>
+                <span class="metric-label">Avg Extraction</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-num highlight-emerald" id="metricDuplicates">100%</span>
+                <span class="metric-label">Zero Duplicates</span>
+              </div>
+            </div>
+          </section>
+
+        </aside>
       </div>
 
-      <!-- RIGHT COLUMN: Company Queue & Metrics -->
-      <aside class="workspace-sidebar">
-        
-        <!-- Target Entities Checklist -->
-        <section class="card sidebar-card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <div class="section-heading-icon"><i data-lucide="building-2"></i></div>
-              <h3>Target Entities Queue</h3>
-            </div>
-            <div class="queue-header-actions">
-              <button class="btn-link" id="btnSelectAll">All</button>
-              <button class="btn-link" id="btnSelectNone">None</button>
-            </div>
-          </div>
-          <p class="sidebar-sub">Select companies to include in the automated run:</p>
-          <div class="companies-queue-list" id="companiesQueueList">
-            <!-- Dynamic Company List items -->
-            <div class="loading-spinner">Loading entities...</div>
-          </div>
-        </section>
-
-        <!-- Key Metrics Panel -->
-        <section class="card sidebar-card">
-          <div class="card-header">
-            <div class="card-title-group">
-              <div class="section-heading-icon"><i data-lucide="activity"></i></div>
-              <h3>Run Telemetry</h3>
-            </div>
-          </div>
-          <div class="metrics-grid">
-            <div class="metric-box">
-              <span class="metric-num highlight-emerald" id="metricTotalInvoices">0</span>
-              <span class="metric-label">Invoices Saved</span>
-            </div>
-            <div class="metric-box">
-              <span class="metric-num highlight-cyan" id="metricStorage">0 KB</span>
-              <span class="metric-label">Disk Storage</span>
-            </div>
-            <div class="metric-box">
-              <span class="metric-num highlight-amber" id="metricSpeed">~1.8s</span>
-              <span class="metric-label">Avg Extraction</span>
-            </div>
-            <div class="metric-box">
-              <span class="metric-num highlight-emerald" id="metricDuplicates">100%</span>
-              <span class="metric-label">Zero Duplicates</span>
-            </div>
-          </div>
-        </section>
-
-      </aside>
     </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: BOT CONFIGURATION & SETTINGS -->
+    <!-- ========================================================================= -->
+    <div class="tab-pane" id="tabSettings" style="display: none;">
+      
+      <!-- SETTINGS HERO & PRESETS -->
+      <section class="card settings-hero-card">
+        <div class="settings-hero-header">
+          <div>
+            <div class="settings-badge-row">
+              <span class="badge badge-cyan"><i data-lucide="settings-2"></i> ENGINE CONFIGURATION</span>
+              <span class="badge badge-emerald" id="savedStatusBadge">Auto-Synced</span>
+            </div>
+            <h2 class="settings-title">Bot Cadence, Step Delays & Timing Controls</h2>
+            <p class="settings-sub">
+              Calibrate individual execution pauses across each phase of the extraction pipeline, mouse/keyboard rates, and queue cooldowns.
+            </p>
+          </div>
+          
+          <div class="settings-actions-top">
+            <button class="btn btn-ghost btn-sm" id="btnResetSettings">
+              <i data-lucide="rotate-ccw"></i>
+              <span>Reset Defaults</span>
+            </button>
+            <button class="btn btn-primary btn-sm" id="btnSaveSettings">
+              <i data-lucide="save"></i>
+              <span>Save & Apply</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- QUICK PRESETS SELECTOR -->
+        <div class="presets-section">
+          <span class="control-label">GLOBAL SPEED PRESETS</span>
+          <div class="presets-grid">
+            <div class="preset-card" data-preset="turbo">
+              <div class="preset-card-header">
+                <span class="preset-icon-box"><i data-lucide="zap"></i></span>
+                <h4>Turbo Speed</h4>
+              </div>
+              <p>50ms click delay with minimal pauses for high-speed networks.</p>
+              <span class="preset-speed-tag">~2.5s / Invoice</span>
+            </div>
+
+            <div class="preset-card" data-preset="fast">
+              <div class="preset-card-header">
+                <span class="preset-icon-box"><i data-lucide="activity"></i></span>
+                <h4>Fast Mode</h4>
+              </div>
+              <p>100ms click delay with balanced execution safety.</p>
+              <span class="preset-speed-tag">~4.0s / Invoice</span>
+            </div>
+
+            <div class="preset-card active" data-preset="stealth">
+              <div class="preset-card-header">
+                <span class="preset-icon-box"><i data-lucide="shield-check"></i></span>
+                <h4>Stealth Human</h4>
+                <span class="preset-rec-tag">Recommended</span>
+              </div>
+              <p>150ms clicks with natural timing jitter to prevent bot flags.</p>
+              <span class="preset-speed-tag">~6.5s / Invoice</span>
+            </div>
+
+            <div class="preset-card" data-preset="safe">
+              <div class="preset-card-header">
+                <span class="preset-icon-box"><i data-lucide="shield"></i></span>
+                <h4>Safe & Reliable</h4>
+              </div>
+              <p>300ms clicks with generous 2-3s step pauses for slow portals.</p>
+              <span class="preset-speed-tag">~10s / Invoice</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS MAIN GRID -->
+      <div class="settings-grid">
+        
+        <!-- COLUMN 1: Granular Step Delays (Stage 1 to 5) -->
+        <div class="settings-col">
+          
+          <section class="card settings-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="section-heading-icon"><i data-lucide="list-ordered"></i></div>
+                <div>
+                  <h3>Individual Pipeline Step Delays</h3>
+                  <span class="card-sub-info">Tune individual pause duration for each step in the 5-stage pipeline</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-sliders-list">
+              
+              <!-- Step 1: Daemon & Auth -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <div class="config-step-tag">
+                    <span class="step-badge">STAGE 1</span>
+                    <span class="config-title">Chrome Daemon & Auth Verification</span>
+                  </div>
+                  <span class="slider-num-value" id="val_step1_daemon">1000 ms</span>
+                </div>
+                <p class="config-desc">Cooldown pause after Chrome CDP connection & session check.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_step1_daemon" min="100" max="5000" step="50" value="1000">
+                </div>
+              </div>
+
+              <!-- Step 2: Company Switcher -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <div class="config-step-tag">
+                    <span class="step-badge">STAGE 2</span>
+                    <span class="config-title">Company Switcher Modal & Confirm</span>
+                  </div>
+                  <span class="slider-num-value" id="val_step2_companySwitch">1500 ms</span>
+                </div>
+                <p class="config-desc">Wait time after clicking `#portalEntity` modal & switching active company.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_step2_companySwitch" min="200" max="10000" step="100" value="1500">
+                </div>
+              </div>
+
+              <!-- Step 3: Invoices Grid Navigation -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <div class="config-step-tag">
+                    <span class="step-badge">STAGE 3</span>
+                    <span class="config-title">Invoice Search Navigation & Grid Load</span>
+                  </div>
+                  <span class="slider-num-value" id="val_step3_gridNav">1200 ms</span>
+                </div>
+                <p class="config-desc">Wait time after navigating to Invoices table for ExtJS grid rows to fully mount.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_step3_gridNav" min="200" max="10000" step="100" value="1200">
+                </div>
+              </div>
+
+              <!-- Step 4: Scan & Filter Rows -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <div class="config-step-tag">
+                    <span class="step-badge">STAGE 4</span>
+                    <span class="config-title">Grid Row Scanner & Type Filtering</span>
+                  </div>
+                  <span class="slider-num-value" id="val_step4_scanFilter">600 ms</span>
+                </div>
+                <p class="config-desc">Pause while parsing grid rows, ignoring credit memos & sorting dates.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_step4_scanFilter" min="100" max="5000" step="50" value="600">
+                </div>
+              </div>
+
+              <!-- Step 5a: Row Double Click -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <div class="config-step-tag">
+                    <span class="step-badge">STAGE 5A</span>
+                    <span class="config-title">Invoice Row Double-Click & Detail Load</span>
+                  </div>
+                  <span class="slider-num-value" id="val_step5_openInvoice">1200 ms</span>
+                </div>
+                <p class="config-desc">Pause after double-clicking row to allow the invoice report window to initialize.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_step5_openInvoice" min="200" max="8000" step="100" value="1200">
+                </div>
+              </div>
+
+              <!-- Step 5b: DevExpress Export Toolbar -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <div class="config-step-tag">
+                    <span class="step-badge">STAGE 5B</span>
+                    <span class="config-title">DevExpress Toolbar Mount & Export Trigger</span>
+                  </div>
+                  <span class="slider-num-value" id="val_step5_exportReport">1800 ms</span>
+                </div>
+                <p class="config-desc">Wait time for DevExpress ReportViewer JavaScript handlers before clicking Export button.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_step5_exportReport" min="500" max="10000" step="100" value="1800">
+                </div>
+              </div>
+
+              <!-- Step 5c: Post Export Cleanup -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <div class="config-step-tag">
+                    <span class="step-badge">STAGE 5C</span>
+                    <span class="config-title">Post-Export Cooldown & Modal Cleanup</span>
+                  </div>
+                  <span class="slider-num-value" id="val_step5_postExport">1000 ms</span>
+                </div>
+                <p class="config-desc">Pause after saving PDF, closing ReportViewer and cleaning stray popups.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_step5_postExport" min="200" max="5000" step="50" value="1000">
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+        </div>
+
+        <!-- COLUMN 2: Mouse Cadence, Queue Delays & Timeouts -->
+        <div class="settings-col">
+          
+          <!-- Mouse & Keyboard Cadence -->
+          <section class="card settings-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="section-heading-icon"><i data-lucide="mouse-pointer"></i></div>
+                <div>
+                  <h3>Mouse & Keyboard Cadence</h3>
+                  <span class="card-sub-info">Motion pathing, click hold duration, and typing speeds</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-sliders-list">
+              <!-- Click Delay -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <span class="config-title">Mouse Click Delay (Base Hold & Motion)</span>
+                  <span class="slider-num-value" id="val_clickDelayMs">150 ms</span>
+                </div>
+                <p class="config-desc">Duration of mouse travel, mouse-down hold, and mouse-up release.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_clickDelayMs" min="20" max="1000" step="10" value="150">
+                </div>
+              </div>
+
+              <!-- Double Click Interval -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <span class="config-title">Double-Click Pulse Interval</span>
+                  <span class="slider-num-value" id="val_doubleClickDelayMs">100 ms</span>
+                </div>
+                <p class="config-desc">Gap between 1st click and 2nd click when opening grid rows.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_doubleClickDelayMs" min="20" max="500" step="10" value="100">
+                </div>
+              </div>
+
+              <!-- Typing Speed -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <span class="config-title">Keystroke Typing Speed</span>
+                  <span class="slider-num-value" id="val_typingDelayMs">70 ms/char</span>
+                </div>
+                <p class="config-desc">Delay per typed character when filling inputs or search bars.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_typingDelayMs" min="10" max="300" step="5" value="70">
+                </div>
+              </div>
+
+              <!-- Human Jitter Toggle -->
+              <div class="toggle-control-box">
+                <div class="toggle-info">
+                  <span class="config-title">Natural Timing Jitter (+/- 15% Variance)</span>
+                  <p class="config-desc">Randomizes timing slightly so actions never fire at exact intervals.</p>
+                </div>
+                <label class="switch-toggle">
+                  <input type="checkbox" id="check_enableHumanJitter" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Interactive Click Tester -->
+              <div class="tester-box" id="clickTesterBox">
+                <div class="tester-inner">
+                  <i data-lucide="mouse-pointer-click"></i>
+                  <span>Click or Double-Click here to test your current delay feel!</span>
+                  <span class="tester-feedback" id="testerFeedback">Ready to test</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Queue Cooldowns & Limits -->
+          <section class="card settings-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="section-heading-icon"><i data-lucide="clock"></i></div>
+                <div>
+                  <h3>Queue Cooldowns & Scraper Timeouts</h3>
+                  <span class="card-sub-info">Inter-item pauses and maximum safety ceilings</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-sliders-list">
+              <!-- Inter-Invoice Delay -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <span class="config-title">Delay Between Consecutive Invoices</span>
+                  <span class="slider-num-value" id="val_delayBetweenInvoicesMs">1200 ms</span>
+                </div>
+                <p class="config-desc">Cooldown rest period after completing one invoice before opening the next.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_delayBetweenInvoicesMs" min="100" max="10000" step="100" value="1200">
+                </div>
+              </div>
+
+              <!-- Inter-Company Delay -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <span class="config-title">Delay Between Company Entities</span>
+                  <span class="slider-num-value" id="val_delayBetweenCompaniesMs">2500 ms</span>
+                </div>
+                <p class="config-desc">Cooldown rest period after finishing a company queue before switching to next.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_delayBetweenCompaniesMs" min="500" max="15000" step="250" value="2500">
+                </div>
+              </div>
+
+              <!-- Max Invoices Limit -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <span class="config-title">Max Invoices Per Company</span>
+                  <span class="slider-num-value" id="val_maxInvoicesPerCompany">10 invoices</span>
+                </div>
+                <p class="config-desc">Number of latest invoices to download per company entity.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_maxInvoicesPerCompany" min="1" max="50" step="1" value="10">
+                </div>
+              </div>
+
+              <!-- Navigation Timeout -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <span class="config-title">Navigation / Page Load Timeout</span>
+                  <span class="slider-num-value" id="val_navigationTimeoutMs">30 sec</span>
+                </div>
+                <p class="config-desc">Maximum wait for page transitions before throwing a timeout error.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_navigationTimeoutMs" min="5000" max="60000" step="1000" value="30000">
+                </div>
+              </div>
+
+              <!-- Download Timeout -->
+              <div class="config-slider-box">
+                <div class="config-slider-header">
+                  <span class="config-title">PDF Download Wait Timeout</span>
+                  <span class="slider-num-value" id="val_downloadTimeoutMs">25 sec</span>
+                </div>
+                <p class="config-desc">Maximum wait for DevExpress PDF generation before timeout retry.</p>
+                <div class="slider-track-wrap">
+                  <input type="range" class="step-slider" id="slider_downloadTimeoutMs" min="5000" max="60000" step="1000" value="25000">
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+        </div>
+
+      </div>
+
+    </div>
+
   </main>
 
   <!-- PDF IN-BROWSER PREVIEW MODAL -->
@@ -306,6 +687,9 @@
       </div>
     </div>
   </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <script src="js/app.js"></script>
 </body>
